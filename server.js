@@ -35,3 +35,10 @@ app.post('/submit', async (req, res) => {
 
 // Start server
 app.listen(port, () => console.log(`Server running on port ${port}`));
+
+// Fetch submitted form data
+app.get('/data', async (req, res) => {
+  const forms = await Form.find().sort({ _id: -1 }); // latest first
+  res.json(forms);
+});
+
