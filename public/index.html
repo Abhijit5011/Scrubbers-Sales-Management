@@ -338,10 +338,15 @@
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
       overflow: hidden;
     }
+    .table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
     
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width:600px;
     }
     
     th, td {
@@ -745,8 +750,6 @@
       <!-- Reports Tab -->
       <div class="tab-content" id="reports-tab">
         <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
           <button class="period-btn" data-period="month">This Month</button>
           <button class="period-btn" data-period="year">This Year</button>
           <button class="period-btn" data-period="all">All Time</button>
@@ -754,7 +757,7 @@
         
         <div class="report-actions no-print">
           <button id="printReport" class="btn btn-success"><i class="fas fa-print"></i> Print Report</button>
-          <button id="downloadReport" class="btn btn-primary"><i class="fas fa-download"></i> Download Report</button>
+          
         </div>
         
         <div id="print-container">
