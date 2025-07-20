@@ -1,26 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Scrubber Sales Tracker</title>
+  <title>Scrubber Business Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f4f4f4;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #result {
+      text-align: center;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
 </head>
 <body>
-  <h2>Enter Daily Sale</h2>
-  <form id="sale-form">
-    <input type="number" name="sheetsSold" placeholder="Sheets Sold" required>
-    <input type="number" name="sellingPrice" placeholder="Selling Price per Sheet" required>
-    <button type="submit">Save Sale</button>
+  <h1>Scrubber Business Tracker</h1>
+
+  <form id="sales-form">
+    <input type="number" name="sheets" placeholder="Sheets Sold" required>
+    <input type="number" name="price" placeholder="Selling Price (per sheet)" required>
+    <input type="number" name="raw" placeholder="Raw Material Expense" required>
+    <input type="number" name="plastic" placeholder="Plastic Cup Expense" required>
+    <input type="number" name="petrol" placeholder="Petrol Expense" required>
+    <button type="submit">Save</button>
   </form>
 
-  <h2>Enter Expense</h2>
-  <form id="expense-form">
-    <input name="type" placeholder="Expense Type" required>
-    <input type="number" name="amount" placeholder="Amount" required>
-    <button type="submit">Save Expense</button>
-  </form>
+  <div id="result"></div>
 
-  <h2>View Report</h2>
-  <button onclick="window.location.href='report.html'">Go to Report</button>
+  <script>
+    document.getElementById('sales-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
 
-  <script src="script.js"></script>
+      const data = {
+        sheets: +this.sheets.value,
+        price: +this.price.value,
+        raw: +this.raw.value,
+        plastic: +this.plastic.value,
+        petrol: +this.petrol.value
+      };
+
+      try {
+        const res = await fetch('/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const msg = await res.text();
+        document.getElementById('result').innerText = msg;
+        this.reset();
+      } catch (err) {
+        document.getElementById('result').innerText = 'Error saving data.';
+      }
+    });
+  </script>
 </body>
 </html>
