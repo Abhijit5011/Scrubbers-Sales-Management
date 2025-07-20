@@ -469,6 +469,26 @@
       from { opacity: 0; transform: translateY(-20px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
     .alert {
   position: fixed;
   top: 20px;
@@ -501,51 +521,8 @@
   to { transform: translateX(0); opacity: 1; }
 }
     
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .modal-body {
-      padding: 20px;
-    }
-    
-    .modal-footer {
-      padding: 20px;
-      border-top: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-    
-    .print-only {
-      display: none;
-    }
-    
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .print-container, .print-container * {
-        visibility: visible;
-      }
-      .print-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 20px;
-      }
-      .no-print {
-        display: none;
-      }
-      .print-only {
-        display: block;
-      }
-    }
+   
+  
     
     @media (max-width: 768px) {
       header {
@@ -620,17 +597,23 @@
     
     <div class="tabs-container">
       <div class="tabs">
-  <div class="tab active" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
-  <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
-  <div class="tab" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
-  <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
-</div>
+         <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
+        <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
+        <div class="tab active" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
+        <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
       </div>
       
       <div id="alert" class="alert" style="display: none;"></div>
       
       <!-- Transactions Tab -->
       <div class="tab-content active" id="transactions-tab">
+         <div class="period-selector">
+          <button class="period-btn active" data-period="today">Today</button>
+          <button class="period-btn" data-period="week">This Week</button>
+          <button class="period-btn" data-period="month">This Month</button>
+          <button class="period-btn" data-period="year">This Year</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
         <div class="filter-section">
           <div class="form-group">
             <label for="startDate"><i class="far fa-calendar"></i> From Date</label>
@@ -677,6 +660,13 @@
       
       <!-- Sales Entry Tab -->
       <div class="tab-content" id="sales-tab">
+         <div class="period-selector">
+          <button class="period-btn active" data-period="today">Today</button>
+          <button class="period-btn" data-period="week">This Week</button>
+          <button class="period-btn" data-period="month">This Month</button>
+          <button class="period-btn" data-period="year">This Year</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
         <form id="salesForm">
           <div class="form-group">
             <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
@@ -699,6 +689,13 @@
       
       <!-- Expenses Tab -->
       <div class="tab-content" id="expenses-tab">
+         <div class="period-selector">
+          <button class="period-btn active" data-period="today">Today</button>
+          <button class="period-btn" data-period="week">This Week</button>
+          <button class="period-btn" data-period="month">This Month</button>
+          <button class="period-btn" data-period="year">This Year</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
         <form id="expenseForm">
           <div class="form-group">
             <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
@@ -973,38 +970,9 @@
     
     // Print report
     document.getElementById('printReport').addEventListener('click', () => {
-  const reportContent = document.getElementById('print-container').innerHTML;
-  const reportTitle = `ScrubberPro_Report_${new Date().toISOString().split('T')[0]}`;
-  
-  // Create a new window with the report
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${reportTitle}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h2 { color: #4361ee; text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #f8f9fa; }
-        .chart-container { margin: 30px 0; }
-      </style>
-    </head>
-    <body>
-      ${reportContent}
-      <script>
-        window.onload = function() {
-          window.print();
-          setTimeout(() => window.close(), 500);
-        };
-      </script>
-    </body>
-    </html>
-  `);
-  printWindow.document.close();
-});
+      document.getElementById('current-report-date').textContent = new Date().toLocaleDateString();
+      window.print();
+    });
     
     // Sales Form Submission
     salesForm.addEventListener('submit', async function(e) {
@@ -1116,7 +1084,7 @@
                 <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue/sale.sheetsSold).toFixed(2)}</td>
                 <td>₹${sale.totalRevenue}</td>
                 <td>
-                  <button class="btn btn-sm btn-success edit-sale" data-id="${sale._id}"><i class="fas fa-edit"></i></button>
+                  
                   <button class="btn btn-sm btn-danger delete-sale" data-id="${sale._id}"><i class="fas fa-trash"></i></button>
                 </td>
               `;
@@ -1134,7 +1102,7 @@
                 <td>${expense.description}</td>
                 <td>₹${expense.amount}</td>
                 <td>
-                  <button class="btn btn-sm btn-success edit-expense" data-id="${expense._id}"><i class="fas fa-edit"></i></button>
+                
                   <button class="btn btn-sm btn-danger delete-expense" data-id="${expense._id}"><i class="fas fa-trash"></i></button>
                 </td>
               `;
@@ -1143,17 +1111,12 @@
           }
           
           // Add event listeners to edit and delete buttons
-          document.querySelectorAll('.edit-sale').forEach(btn => {
-            btn.addEventListener('click', () => editSale(btn.dataset.id));
-          });
+          
           
           document.querySelectorAll('.delete-sale').forEach(btn => {
             btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'sale'));
           });
           
-          document.querySelectorAll('.edit-expense').forEach(btn => {
-            btn.addEventListener('click', () => editExpense(btn.dataset.id));
-          });
           
           document.querySelectorAll('.delete-expense').forEach(btn => {
             btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'expense'));
@@ -1168,52 +1131,8 @@
       }
     }
     
-    // Edit Sale
-    async function editSale(id) {
-      try {
-        const response = await fetch(`/api/sales/${id}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          const sale = result.data;
-          document.getElementById('editSaleId').value = sale._id;
-          document.getElementById('editSaleDate').value = sale.date.split('T')[0];
-          document.getElementById('editSheetsSold').value = sale.sheetsSold;
-          document.getElementById('editTotalRevenue').value = sale.totalRevenue;
-          
-          document.getElementById('editSaleModal').style.display = 'flex';
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading sale data. Please try again.', 'danger');
-      }
-    }
     
-    // Edit Expense
-    async function editExpense(id) {
-      try {
-        const response = await fetch(`/api/expenses/${id}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          const expense = result.data;
-          document.getElementById('editExpenseId').value = expense._id;
-          document.getElementById('editExpenseDate').value = expense.date.split('T')[0];
-          document.getElementById('editExpenseType').value = expense.type;
-          document.getElementById('editExpenseAmount').value = expense.amount;
-          document.getElementById('editExpenseDescription').value = expense.description;
-          
-          document.getElementById('editExpenseModal').style.display = 'flex';
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading expense data. Please try again.', 'danger');
-      }
-    }
+   
     
     // Update Sale
     document.getElementById('updateSaleBtn').addEventListener('click', async function() {
@@ -1387,7 +1306,13 @@
       const profitData = chartData.map(item => item.profit);
       
       // Sales Chart
-      // In the updateCharts function:
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      
+      if (salesChart) {
+        salesChart.destroy();
+      }
+      
+     // In the updateCharts function:
 // Sales Chart (Line only)
 salesChart = new Chart(salesCtx, {
   type: 'line',
@@ -1457,10 +1382,10 @@ profitChart = new Chart(profitCtx, {
     }
   }
 });
-    
+    }
     
     // Show Alert
-   function showAlert(message, type) {
+    function showAlert(message, type) {
   alertBox.innerHTML = `
     <div class="alert-content alert-${type}">
       <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
