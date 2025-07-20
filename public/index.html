@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScrubberPro | Business Dashboard</title>
+  <title>Siddhanath Scrubbers | Business Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -339,9 +339,9 @@
       overflow: hidden;
     }
     .table-wrapper {
-      overflow-x: auto;
-      width: 100%;
-     }
+     overflow-x: auto;
+     width: 100%;
+    }
     
     table {
       width: 100%;
@@ -580,7 +580,7 @@
       <div class="logo">
         <i class="fas fa-scrubber"></i>
         <div class="logo-text">
-          <h1>ScrubberPro</h1>
+          <h1>Sidhhanath Scrubbers</h1>
           <p>Stainless Steel Scrubber Business Management</p>
         </div>
       </div>
@@ -618,7 +618,7 @@
     
     <div class="tabs-container">
       <div class="tabs">
-        <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
+        <div class="tab active" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
         <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
         <div class="tab" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
         <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
@@ -750,8 +750,6 @@
       <!-- Reports Tab -->
       <div class="tab-content" id="reports-tab">
         <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
           <button class="period-btn" data-period="month">This Month</button>
           <button class="period-btn" data-period="year">This Year</button>
           <button class="period-btn" data-period="all">All Time</button>
@@ -759,7 +757,6 @@
         
         <div class="report-actions no-print">
           <button id="printReport" class="btn btn-success"><i class="fas fa-print"></i> Print Report</button>
-          <button id="downloadReport" class="btn btn-primary"><i class="fas fa-download"></i> Download Report</button>
         </div>
         
         <div id="print-container">
@@ -1327,202 +1324,123 @@
         return;
       }
       
-     // Prepare labels and data
-const labels = chartData.map(item => item.period);
-const sheetsSoldData = chartData.map(item => item.sheetsSold);
-const revenueData = chartData.map(item => item.revenue);
-const productionCostData = chartData.map(item => item.productionCost);
-const profitData = chartData.map(item => item.profit);
-
-// Format labels based on period
-let formattedLabels = labels;
-let xAxisTitle = '';
-
-switch(currentPeriod) {
-  case 'today':
-   // For today, show day names
-    formattedLabels = labels.map(label => {
-      const date = new Date(label);
-      return date.toLocaleDateString([], { weekday: 'short' });
-    });
-    xAxisTitle = 'Days of Week';
-    break;
-  case 'week':
-    // For week, show day names
-    formattedLabels = labels.map(label => {
-      const date = new Date(label);
-      return date.toLocaleDateString([], { weekday: 'short' });
-    });
-    xAxisTitle = 'Days of Week';
-    break;
-  case 'month':
-    // For month, show dates
-    formattedLabels = labels.map(label => {
-      const date = new Date(label);
-      return date.getDate() + '/' + (date.getMonth() + 1);
-    });
-    xAxisTitle = 'Dates';
-    break;
-  case 'year':
-    // For year, show month names
-    formattedLabels = labels.map(label => {
-      const date = new Date(label);
-      return date.toLocaleDateString([], { month: 'short' });
-    });
-    xAxisTitle = 'Months';
-    break;
-  case 'all':
-    // For all time, show years
-    formattedLabels = labels.map(label => {
-      const date = new Date(label);
-      return date.getFullYear();
-    });
-    xAxisTitle = 'Years';
-    break;
-}
-
-// Sales Chart (Line chart for sheets sold)
-const salesCtx = document.getElementById('salesChart').getContext('2d');
-
-if (salesChart) {
-  salesChart.destroy();
-}
-
-salesChart = new Chart(salesCtx, {
-  type: 'line',
-  data: {
-    labels: formattedLabels,
-    datasets: [
-      {
-        label: 'Sheets Sold',
-        data: sheetsSoldData,
-        backgroundColor: 'rgba(76, 201, 240, 0.2)',
-        borderColor: 'rgba(76, 201, 240, 1)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true
+      // Prepare labels and data
+      const labels = chartData.map(item => item.period);
+      const sheetsSoldData = chartData.map(item => item.sheetsSold);
+      const revenueData = chartData.map(item => item.revenue);
+      const productionCostData = chartData.map(item => item.productionCost);
+      const profitData = chartData.map(item => item.profit);
+      
+      // Sales Chart (Line chart for sheets sold)
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      
+      if (salesChart) {
+        salesChart.destroy();
       }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            return `${context.dataset.label}: ${context.raw}`;
-          },
-          // Show full date in tooltip regardless of period
-          title: function(context) {
-            if (currentPeriod === 'today') {
-              return new Date(labels[context[0].dataIndex]).toLocaleString();
-            } else {
-              return new Date(labels[context[0].dataIndex]).toLocaleDateString();
+      
+      salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Sheets Sold',
+              data: sheetsSoldData,
+              backgroundColor: 'rgba(76, 201, 240, 0.2)',
+              borderColor: 'rgba(76, 201, 240, 1)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true
             }
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: xAxisTitle
-        }
-      },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Sheets Sold'
-        }
-      }
-    }
-  }
-});
-
-// Profit Chart (Bar chart for revenue, cost, profit)
-const profitCtx = document.getElementById('profitChart').getContext('2d');
-
-if (profitChart) {
-  profitChart.destroy();
-}
-
-profitChart = new Chart(profitCtx, {
-  type: 'bar',
-  data: {
-    labels: formattedLabels,
-    datasets: [
-      {
-        label: 'Revenue (₹)',
-        data: revenueData,
-        backgroundColor: 'rgba(67, 97, 238, 0.7)',
-        borderColor: 'rgba(67, 97, 238, 1)',
-        borderWidth: 1
-      },
-      {
-        label: 'Production Cost (₹)',
-        data: productionCostData,
-        backgroundColor: 'rgba(248, 150, 30, 0.7)',
-        borderColor: 'rgba(248, 150, 30, 1)',
-        borderWidth: 1
-      },
-      {
-        label: 'Profit (₹)',
-        data: profitData,
-        backgroundColor: 'rgba(76, 201, 240, 0.7)',
-        borderColor: 'rgba(76, 201, 240, 1)',
-        borderWidth: 1
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            return `${context.dataset.label}: ₹${context.raw.toLocaleString()}`;
-          },
-          // Show full date in tooltip regardless of period
-          title: function(context) {
-            if (currentPeriod === 'today') {
-              return new Date(labels[context[0].dataIndex]).toLocaleString();
-            } else {
-              return new Date(labels[context[0].dataIndex]).toLocaleDateString();
-            }
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: xAxisTitle
-        }
-      },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Amount (₹)'
+          ]
         },
-        ticks: {
-          callback: function(value) {
-            return '₹' + value.toLocaleString();
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.raw}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Sheets Sold'
+              }
+            }
           }
         }
+      });
+      
+      // Profit Chart (Bar chart for revenue, cost, profit)
+      const profitCtx = document.getElementById('profitChart').getContext('2d');
+      
+      if (profitChart) {
+        profitChart.destroy();
       }
+      
+      profitChart = new Chart(profitCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Revenue (₹)',
+              data: revenueData,
+              backgroundColor: 'rgba(67, 97, 238, 0.7)',
+              borderColor: 'rgba(67, 97, 238, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Production Cost (₹)',
+              data: productionCostData,
+              backgroundColor: 'rgba(248, 150, 30, 0.7)',
+              borderColor: 'rgba(248, 150, 30, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Profit (₹)',
+              data: profitData,
+              backgroundColor: 'rgba(76, 201, 240, 0.7)',
+              borderColor: 'rgba(76, 201, 240, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ₹${context.raw}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Amount (₹)'
+              }
+            }
+          }
+        }
+      });
     }
-  }
-});
     
     // Show Alert
     function showAlert(message, type) {
