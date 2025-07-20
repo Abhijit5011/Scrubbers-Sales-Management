@@ -10,7 +10,7 @@
   <style>
     :root {
       --primary: #4361ee;
-      --secondary: #3f37c9;
+      --secondary: #3a0ca3;
       --success: #4cc9f0;
       --danger: #f72585;
       --warning: #f8961e;
@@ -65,6 +65,13 @@
     
     .logo i {
       font-size: 1.8rem;
+    }
+    
+    .current-date {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
     }
     
     .dashboard {
@@ -368,6 +375,32 @@
       gap: 10px;
     }
     
+    .period-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .period-btn {
+      padding: 8px 15px;
+      border-radius: 20px;
+      background: white;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .period-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .period-btn:hover {
+      background: rgba(67, 97, 238, 0.1);
+    }
+    
     @media (max-width: 768px) {
       .dashboard {
         grid-template-columns: 1fr;
@@ -414,34 +447,41 @@
     
     <div class="dashboard">
       <div class="card">
-        <h3><i class="fas fa-chart-line"></i> Today's Sales</h3>
-        <div class="value" id="todaySales">0 sheets</div>
-        <div class="value">₹<span id="todaySalesAmount">0</span></div>
-        <div class="subtext"><i class="fas fa-rupee-sign"></i> <span id="todayAvgPrice">0</span> per sheet</div>
+        <h3><i class="fas fa-chart-line"></i> Sales</h3>
+        <div class="value" id="totalSales">₹0</div>
+        <div class="subtext"><i class="fas fa-boxes"></i> <span id="totalSheets">0</span> sheets sold</div>
       </div>
       
       <div class="card production">
         <h3><i class="fas fa-industry"></i> Production Cost</h3>
-        <div class="value">₹<span id="todayProductionCost">0</span></div>
-        <div class="subtext"><i class="fas fa-cubes"></i> <span id="todaySheets">0</span> sheets @ ₹47 each</div>
+        <div class="value">₹<span id="totalProductionCost">0</span></div>
+        <div class="subtext"><i class="fas fa-cubes"></i> @ ₹47 per sheet</div>
       </div>
       
       <div class="card profit">
-        <h3><i class="fas fa-hand-holding-usd"></i> Today's Profit</h3>
-        <div class="value">₹<span id="todayProfit">0</span></div>
+        <h3><i class="fas fa-hand-holding-usd"></i> Net Profit</h3>
+        <div class="value">₹<span id="netProfit">0</span></div>
         <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
       </div>
       
       <div class="card expense">
         <h3><i class="fas fa-gas-pump"></i> Petrol Expense</h3>
-        <div class="value">₹<span id="todayPetrol">0</span></div>
-        <div class="subtext"><i class="fas fa-truck"></i> Delivery costs</div>
+        <div class="value">₹<span id="totalPetrol">0</span></div>
+        <div class="subtext"><i class="fas fa-truck"></i> Monthly delivery costs</div>
       </div>
+    </div>
+    
+    <div class="period-selector">
+      <button class="period-btn active" data-period="today">Today</button>
+      <button class="period-btn" data-period="week">This Week</button>
+      <button class="period-btn" data-period="month">This Month</button>
+      <button class="period-btn" data-period="year">This Year</button>
+      <button class="period-btn" data-period="all">All Time</button>
     </div>
     
     <div class="tabs">
       <div class="tab active" data-tab="entry"><i class="fas fa-plus-circle"></i> New Entry</div>
-      <div class="tab" data-tab="transactions"><i class="fas fa-list"></i> Transactions</div>
+      <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expense</div>
       <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
     </div>
     
@@ -460,81 +500,56 @@
           </div>
           
           <div class="form-group">
-            <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue</label>
+            <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue (₹)</label>
             <input type="number" id="totalRevenue" name="totalRevenue" min="60" placeholder="Total amount received" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="petrolExpense"><i class="fas fa-gas-pump"></i> Petrol Expense</label>
-            <input type="number" id="petrolExpense" name="petrolExpense" min="0" placeholder="Delivery costs" required>
           </div>
         </div>
         
         <button type="submit" class="btn-primary">
-          <i class="fas fa-save"></i> Save Entry
+          <i class="fas fa-save"></i> Save Sales Entry
         </button>
       </form>
     </div>
     
-    <!-- Transactions Tab -->
-    <div class="tab-content" id="transactions-tab">
-      <div class="filter-section">
+    <!-- Expenses Tab -->
+    <div class="tab-content" id="expenses-tab">
+      <form id="expense-form">
         <div class="form-grid">
           <div class="form-group">
-            <label for="startDate"><i class="far fa-calendar"></i> From Date</label>
-            <input type="date" id="startDate">
+            <label for="expense-date"><i class="far fa-calendar-alt"></i> Date</label>
+            <input type="date" id="expense-date" name="date" required>
           </div>
           
           <div class="form-group">
-            <label for="endDate"><i class="far fa-calendar"></i> To Date</label>
-            <input type="date" id="endDate">
+            <label for="expense-type"><i class="fas fa-tags"></i> Expense Type</label>
+            <select id="expense-type" name="type" required>
+              <option value="petrol">Petrol</option>
+              <option value="other">Other</option>
+            </select>
           </div>
           
           <div class="form-group">
-            <button id="filterTransactions" class="btn-secondary">
-              <i class="fas fa-filter"></i> Filter
-            </button>
-            <button id="resetFilters" class="btn-danger">
-              <i class="fas fa-redo"></i> Reset
-            </button>
+            <label for="expense-amount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
+            <input type="number" id="expense-amount" name="amount" min="0" placeholder="Amount spent" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="expense-description"><i class="fas fa-align-left"></i> Description</label>
+            <input type="text" id="expense-description" name="description" placeholder="What was this expense for?">
           </div>
         </div>
-      </div>
-      
-      <table id="transactions-table">
-        <thead>
-          <tr>
-            <th><i class="far fa-calendar"></i> Date</th>
-            <th><i class="fas fa-boxes"></i> Sheets</th>
-            <th><i class="fas fa-rupee-sign"></i> Revenue</th>
-            <th><i class="fas fa-cogs"></i> Production</th>
-            <th><i class="fas fa-gas-pump"></i> Petrol</th>
-            <th><i class="fas fa-coins"></i> Profit</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Transactions will be loaded here -->
-        </tbody>
-      </table>
+        
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-save"></i> Save Expense
+        </button>
+      </form>
     </div>
     
     <!-- Reports Tab -->
     <div class="tab-content" id="reports-tab">
       <div class="report-actions">
-        <select id="report-period" class="btn-secondary">
-          <option value="today">Today</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="year">This Year</option>
-          <option value="all">All Time</option>
-        </select>
-        
-        <button id="generateReport" class="btn-primary">
-          <i class="fas fa-chart-bar"></i> Generate Report
-        </button>
-        
         <button id="downloadReport" class="btn-success">
-          <i class="fas fa-file-download"></i> Download CSV
+          <i class="fas fa-file-download"></i> Download Full Report (CSV)
         </button>
       </div>
       
@@ -549,7 +564,7 @@
       </div>
       
       <div class="summary-card">
-        <h3><i class="fas fa-file-alt"></i> Summary Report</h3>
+        <h3><i class="fas fa-file-alt"></i> Detailed Summary</h3>
         <table id="summary-table">
           <thead>
             <tr>
@@ -559,28 +574,32 @@
           </thead>
           <tbody>
             <tr>
-              <td><i class="fas fa-boxes"></i> Total Sheets Sold</td>
-              <td id="totalSheets">0</td>
+              <td><i class="fas fa-boxes"></i> Sheets Sold</td>
+              <td id="report-sheets">0</td>
             </tr>
             <tr>
               <td><i class="fas fa-rupee-sign"></i> Total Revenue</td>
-              <td id="totalRevenue">₹0</td>
+              <td id="report-revenue">₹0</td>
             </tr>
             <tr>
-              <td><i class="fas fa-cogs"></i> Production Cost (@₹47/sheet)</td>
-              <td id="totalProductionCost">₹0</td>
+              <td><i class="fas fa-cogs"></i> Production Cost</td>
+              <td id="report-production">₹0</td>
             </tr>
             <tr>
               <td><i class="fas fa-gas-pump"></i> Petrol Expense</td>
-              <td id="totalPetrol">₹0</td>
+              <td id="report-petrol">₹0</td>
             </tr>
             <tr>
               <td><i class="fas fa-coins"></i> Net Profit</td>
-              <td id="netProfit">₹0</td>
+              <td id="report-profit">₹0</td>
             </tr>
             <tr>
               <td><i class="fas fa-percentage"></i> Profit Margin</td>
-              <td id="profitMargin">0%</td>
+              <td id="report-margin">0%</td>
+            </tr>
+            <tr>
+              <td><i class="fas fa-tag"></i> Avg. Price per Sheet</td>
+              <td id="report-avg-price">₹0</td>
             </tr>
           </tbody>
         </table>
@@ -592,9 +611,14 @@
     // DOM Elements
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
+    const periodBtns = document.querySelectorAll('.period-btn');
     const alertBox = document.getElementById('alert');
     const salesForm = document.getElementById('sales-form');
+    const expenseForm = document.getElementById('expense-form');
     const todayDate = new Date().toISOString().split('T')[0];
+    let currentPeriod = 'today';
+    let salesChart = null;
+    let profitChart = null;
     
     // Set current date
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
@@ -606,6 +630,7 @@
     
     // Set today's date as default
     document.getElementById('date').value = todayDate;
+    document.getElementById('expense-date').value = todayDate;
     
     // Tab switching
     tabs.forEach(tab => {
@@ -618,6 +643,16 @@
       });
     });
     
+    // Period switching
+    periodBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        periodBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPeriod = btn.dataset.period;
+        updateDashboard();
+      });
+    });
+    
     // Sales Form Submission
     salesForm.addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -625,8 +660,7 @@
       const formData = {
         date: this.date.value,
         sheetsSold: parseInt(this.sheetsSold.value),
-        totalRevenue: parseInt(this.totalRevenue.value),
-        petrolExpense: parseInt(this.petrolExpense.value)
+        totalRevenue: parseInt(this.totalRevenue.value)
       };
       
       try {
@@ -641,11 +675,10 @@
         const result = await response.json();
         
         if (result.success) {
-          showAlert('Daily entry saved successfully!', 'success');
+          showAlert('Sales entry saved successfully!', 'success');
           this.reset();
           this.date.value = todayDate;
           updateDashboard();
-          loadTransactions();
         } else {
           showAlert(`Error: ${result.message}`, 'danger');
         }
@@ -655,17 +688,63 @@
       }
     });
     
-    // Filter Transactions
-    document.getElementById('filterTransactions').addEventListener('click', loadTransactions);
-    document.getElementById('resetFilters').addEventListener('click', () => {
-      document.getElementById('startDate').value = '';
-      document.getElementById('endDate').value = '';
-      loadTransactions();
+    // Expense Form Submission
+    expenseForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        date: this.date.value,
+        type: this.type.value,
+        amount: parseInt(this.amount.value),
+        description: this.description.value || `${this.type.value} expense`
+      };
+      
+      try {
+        const response = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('Expense saved successfully!', 'success');
+          this.reset();
+          this.date.value = todayDate;
+          updateDashboard();
+        } else {
+          showAlert(`Error: ${result.message}`, 'danger');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error saving expense. Please try again.', 'danger');
+      }
     });
     
-    // Generate Report
-    document.getElementById('generateReport').addEventListener('click', generateReport);
-    document.getElementById('downloadReport').addEventListener('click', downloadReport);
+    // Download Report
+    document.getElementById('downloadReport').addEventListener('click', async function() {
+      try {
+        const response = await fetch(`/api/reports/download?period=${currentPeriod}`);
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `scrubber-report-${currentPeriod}-${new Date().toISOString().split('T')[0]}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } else {
+          showAlert('Error generating report download', 'danger');
+        }
+      } catch (error) {
+        console.error('Error downloading report:', error);
+        showAlert('Error downloading report', 'danger');
+      }
+    });
     
     // Helper Functions
     function showAlert(message, type) {
@@ -680,111 +759,53 @@
     
     async function updateDashboard() {
       try {
-        const response = await fetch('/api/reports/summary?period=today');
+        const response = await fetch(`/api/reports/summary?period=${currentPeriod}`);
         const result = await response.json();
         
         if (result.success) {
           const data = result.data;
           
-          document.getElementById('todaySales').textContent = `${data.totalSheets || 0} sheets`;
-          document.getElementById('todaySalesAmount').textContent = data.totalRevenue || 0;
-          document.getElementById('todayAvgPrice').textContent = data.avgPricePerSheet ? data.avgPricePerSheet.toFixed(2) : 0;
-          document.getElementById('todayProductionCost').textContent = data.totalProductionCost || 0;
-          document.getElementById('todaySheets').textContent = data.totalSheets || 0;
-          document.getElementById('todayProfit').textContent = data.totalProfit || 0;
-          document.getElementById('todayPetrol').textContent = data.totalPetrolExpense || 0;
+          // Update dashboard cards
+          document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
+          document.getElementById('totalSheets').textContent = data.totalSheets || 0;
+          document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
+          document.getElementById('totalPetrol').textContent = data.totalPetrolExpense || 0;
+          document.getElementById('netProfit').textContent = data.totalProfit || 0;
           
-          if (data.totalRevenue && data.totalProfit) {
-            const margin = ((data.totalProfit / data.totalRevenue) * 100).toFixed(2);
-            document.getElementById('profitMargin').textContent = margin;
-          }
+          // Calculate and display profit margin
+          const margin = data.totalRevenue ? ((data.totalProfit / data.totalRevenue) * 100).toFixed(2) : 0;
+          document.getElementById('profitMargin').textContent = margin;
+          
+          // Update report table
+          document.getElementById('report-sheets').textContent = data.totalSheets || 0;
+          document.getElementById('report-revenue').textContent = `₹${data.totalRevenue || 0}`;
+          document.getElementById('report-production').textContent = `₹${data.totalProductionCost || 0}`;
+          document.getElementById('report-petrol').textContent = `₹${data.totalPetrolExpense || 0}`;
+          document.getElementById('report-profit').textContent = `₹${data.totalProfit || 0}`;
+          document.getElementById('report-margin').textContent = `${margin}%`;
+          document.getElementById('report-avg-price').textContent = data.avgPricePerSheet ? `₹${data.avgPricePerSheet.toFixed(2)}` : '₹0';
+          
+          // Update charts
+          updateCharts();
         }
       } catch (error) {
         console.error('Error updating dashboard:', error);
       }
     }
     
-    async function loadTransactions() {
-      try {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        
-        let url = '/api/sales';
-        if (startDate && endDate) {
-          url += `?startDate=${startDate}&endDate=${endDate}`;
-        }
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (result.success) {
-          const tbody = document.querySelector('#transactions-table tbody');
-          tbody.innerHTML = '';
-          
-          result.data.forEach(sale => {
-            const productionCost = sale.sheetsSold * 47;
-            const profit = sale.totalRevenue - productionCost - sale.petrolExpense;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${new Date(sale.date).toLocaleDateString()}</td>
-              <td>${sale.sheetsSold}</td>
-              <td>₹${sale.totalRevenue}</td>
-              <td>₹${productionCost}</td>
-              <td>₹${sale.petrolExpense}</td>
-              <td>₹${profit.toFixed(2)}</td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
-      } catch (error) {
-        console.error('Error loading transactions:', error);
-        showAlert('Error loading transactions', 'danger');
-      }
-    }
-    
-    async function generateReport() {
-      try {
-        const period = document.getElementById('report-period').value;
-        const response = await fetch(`/api/reports/summary?period=${period}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          const data = result.data;
-          
-          // Update summary table
-          document.getElementById('totalSheets').textContent = data.totalSheets || 0;
-          document.getElementById('totalRevenue').textContent = `₹${data.totalRevenue || 0}`;
-          document.getElementById('totalProductionCost').textContent = `₹${data.totalProductionCost || 0}`;
-          document.getElementById('totalPetrol').textContent = `₹${data.totalPetrolExpense || 0}`;
-          document.getElementById('netProfit').textContent = `₹${data.totalProfit || 0}`;
-          
-          if (data.totalRevenue && data.totalProfit) {
-            const margin = ((data.totalProfit / data.totalRevenue) * 100).toFixed(2);
-            document.getElementById('profitMargin').textContent = `${margin}%`;
-          }
-          
-          // Update charts (simplified - in real app you would fetch more detailed data)
-          updateCharts();
-        }
-      } catch (error) {
-        console.error('Error generating report:', error);
-        showAlert('Error generating report', 'danger');
-      }
-    }
-    
     function updateCharts() {
       // Destroy existing charts if they exist
-      if (window.salesChart) window.salesChart.destroy();
-      if (window.profitChart) window.profitChart.destroy();
+      if (salesChart) salesChart.destroy();
+      if (profitChart) profitChart.destroy();
       
       // Sample data - in a real app you would fetch this from your API
-      const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      const salesData = [1200, 1900, 1500, 2000, 1800, 2200];
-      const profitData = [15600, 24700, 19500, 26000, 23400, 28600];
+      const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+      const salesData = [1200, 1900, 1500, 2000];
+      const profitData = [15600, 24700, 19500, 26000];
       
       // Sales Chart
       const salesCtx = document.getElementById('salesChart').getContext('2d');
-      window.salesChart = new Chart(salesCtx, {
+      salesChart = new Chart(salesCtx, {
         type: 'bar',
         data: {
           labels: labels,
@@ -824,7 +845,7 @@
       
       // Profit Chart
       const profitCtx = document.getElementById('profitChart').getContext('2d');
-      window.profitChart = new Chart(profitCtx, {
+      profitChart = new Chart(profitCtx, {
         type: 'line',
         data: {
           labels: labels,
@@ -865,32 +886,9 @@
       });
     }
     
-    async function downloadReport() {
-      try {
-        const response = await fetch('/api/reports/download');
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `scrubber-report-${new Date().toISOString().split('T')[0]}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-        } else {
-          showAlert('Error generating report download', 'danger');
-        }
-      } catch (error) {
-        console.error('Error downloading report:', error);
-        showAlert('Error downloading report', 'danger');
-      }
-    }
-    
     // Initialize the app
     document.addEventListener('DOMContentLoaded', () => {
       updateDashboard();
-      loadTransactions();
-      generateReport();
     });
   </script>
 </body>
