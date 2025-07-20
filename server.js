@@ -2,9 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const cors = require('cors');
-const { createCanvas } = require('canvas');
-const { PDFDocument } = require('pdf-lib');
-const fs = require('fs');
 const app = express();
 
 // MongoDB connection
@@ -140,33 +137,16 @@ app.get('/api/reports/summary', async (req, res) => {
   }
 });
 
+// Simple JSON download instead of PDF
 app.get('/api/reports/download', async (req, res) => {
   try {
-    const { period } = req.query;
     const sales = await Sale.find().sort({ date: -1 });
-    
-    // Generate PDF report
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([600, 800]);
-    const { width, height } = page.getSize();
-    
-    // Add content to PDF
-    page.drawText('Scrubber Business Report', {
-      x: 50,
-      y: height - 50,
-      size: 20,
-    });
-    
-    // Add more content as needed...
-    
-    const pdfBytes = await pdfDoc.save();
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=scrubber-report.pdf');
-    res.send(pdfBytes);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=scrubber-report.json');
+    res.send(JSON.stringify(sales, null, 2));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Error generating PDF report', error: err.message });
+    res.status(500).json({ success: false, message: 'Error generating report', error: err.message });
   }
 });
 
