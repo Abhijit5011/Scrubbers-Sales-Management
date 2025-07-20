@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const app = express();
 
-// ✅ MongoDB connection
+// MongoDB connection
 const MONGODB_URI = 'mongodb+srv://abhijitdeshmukh501:abhi@cluster0.pnsz7au.mongodb.net/scrubberDB?retryWrites=true&w=majority';
 
 mongoose.connect(MONGODB_URI, {
@@ -13,28 +13,30 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log("✅ Connected to MongoDB"))
 .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// ✅ Define Mongoose Schema
+// Define Mongoose Schema
 const SalesSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
-  sheets: Number,
-  price: Number,
-  raw: Number,
-  plastic: Number,
-  petrol: Number
+  sheets: { type: Number, required: true },
+  price: { type: Number, required: true },
+  raw: { type: Number, required: true },
+  plastic: { type: Number, required: true },
+  petrol: { type: Number, required: true },
+  profit: { type: Number } // Added profit field
 });
 
 const Sale = mongoose.model('Sale', SalesSchema);
 
-// ✅ Middleware
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public')); // to serve index.html, report.html etc.
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Handle form submission
+// Handle form submission
 app.post('/submit', async (req, res) => {
   try {
     const { sheets, price, raw, plastic, petrol } = req.body;
-    const newSale = new Sale({ sheets, price, raw, plastic, petrol });
+    const profit = (sheets * price) - (Number(raw) + Number(plastic) + Number(petrol));
+    const newSale = new Sale({ sheets, price, raw, plastic, petrol, profit });
     await newSale.save();
     res.send('✅ Data saved successfully!');
   } catch (err) {
@@ -43,7 +45,7 @@ app.post('/submit', async (req, res) => {
   }
 });
 
-// ✅ API to fetch report data
+// API to fetch report data
 app.get('/report-data', async (req, res) => {
   try {
     const allData = await Sale.find().sort({ date: -1 });
@@ -54,12 +56,7 @@ app.get('/report-data', async (req, res) => {
   }
 });
 
-// ✅ Fallback route (optional for SPA)
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public/index.html'));
-// });
-
-// ✅ Start server
+// Start server
 const port = process.env.PORT || 10000;
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
