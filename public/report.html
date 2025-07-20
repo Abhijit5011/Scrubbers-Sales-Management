@@ -1,25 +1,104 @@
 <!DOCTYPE html>
 <html>
-<head><title>Sales Report</title></head>
+<head>
+  <title>Scrubber Business Reports</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f8f9fa;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #dee2e6;
+      text-align: center;
+    }
+    th {
+      background-color: #343a40;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .totals {
+      margin-top: 20px;
+      font-size: 1.1em;
+      font-weight: bold;
+      text-align: right;
+    }
+  </style>
+</head>
 <body>
-  <h1>Sales & Expenses Report</h1>
-  <div id="report"></div>
+
+  <h1>Scrubber Business Daily Reports</h1>
+  <table id="report-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Sheets Sold</th>
+        <th>Price/Sheet</th>
+        <th>Total Revenue</th>
+        <th>Raw Material</th>
+        <th>Plastic Cups</th>
+        <th>Petrol</th>
+        <th>Total Expense</th>
+        <th>Profit</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="totals" id="totals"></div>
+
   <script>
-    fetch('/report')
-      .then(res => res.json())
-      .then(data => {
-        const div = document.getElementById('report');
-        let html = '<h2>Sales:</h2><ul>';
-        data.sales.forEach(s => {
-          html += `<li>${new Date(s.date).toLocaleDateString()} - ${s.sheetsSold} sheets @ ₹${s.sellingPrice}</li>`;
-        });
-        html += '</ul><h2>Expenses:</h2><ul>';
-        data.expenses.forEach(e => {
-          html += `<li>${new Date(e.date).toLocaleDateString()} - ${e.type}: ₹${e.amount}</li>`;
-        });
-        html += '</ul>';
-        div.innerHTML = html;
+    async function loadReport() {
+      const res = await fetch('/report');
+      const data = await res.json();
+
+      let totalRevenue = 0, totalExpense = 0, totalProfit = 0;
+
+      const tbody = document.querySelector('tbody');
+      data.forEach(entry => {
+        const revenue = entry.sheets * entry.price;
+        const expense = entry.raw + entry.plastic + entry.petrol;
+        const profit = revenue - expense;
+
+        totalRevenue += revenue;
+        totalExpense += expense;
+        totalProfit += profit;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${new Date(entry.date).toLocaleDateString()}</td>
+          <td>${entry.sheets}</td>
+          <td>₹${entry.price}</td>
+          <td>₹${revenue}</td>
+          <td>₹${entry.raw}</td>
+          <td>₹${entry.plastic}</td>
+          <td>₹${entry.petrol}</td>
+          <td>₹${expense}</td>
+          <td>₹${profit}</td>
+        `;
+        tbody.appendChild(tr);
       });
+
+      document.getElementById('totals').innerText =
+        `Total Revenue: ₹${totalRevenue} | Total Expenses: ₹${totalExpense} | Total Profit: ₹${totalProfit}`;
+    }
+
+    loadReport();
   </script>
 </body>
 </html>
