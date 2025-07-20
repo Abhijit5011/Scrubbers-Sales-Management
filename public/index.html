@@ -273,7 +273,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-top: 6px;
+      margin-top: 10px;
     }
     
     .btn {
@@ -623,7 +623,15 @@
       <div id="alert" class="alert"></div>
       
       <!-- Sales Entry Tab -->
+      
       <div class="tab-content" id="sales-tab">
+                <div class="period-selector">
+          <button class="period-btn active" data-period="today">Today</button>
+          <button class="period-btn" data-period="week">This Week</button>
+          <button class="period-btn" data-period="month">This Month</button>
+          <button class="period-btn" data-period="year">This Year</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
         <form id="salesForm">
           <div class="form-group">
             <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
@@ -646,6 +654,13 @@
       
       <!-- Expenses Tab -->
       <div class="tab-content" id="expenses-tab">
+                <div class="period-selector">
+          <button class="period-btn active" data-period="today">Today</button>
+          <button class="period-btn" data-period="week">This Week</button>
+          <button class="period-btn" data-period="month">This Month</button>
+          <button class="period-btn" data-period="year">This Year</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
         <form id="expenseForm">
           <div class="form-group">
             <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
@@ -676,6 +691,13 @@
       
       <!-- Transactions Tab -->
       <div class="tab-content active" id="transactions-tab">
+                <div class="period-selector">
+          <button class="period-btn active" data-period="today">Today</button>
+          <button class="period-btn" data-period="week">This Week</button>
+          <button class="period-btn" data-period="month">This Month</button>
+          <button class="period-btn" data-period="year">This Year</button>
+          <button class="period-btn" data-period="all">All Time</button>
+        </div>
         <div class="filter-section">
           <div class="form-group">
             <label for="startDate"><i class="far fa-calendar"></i> From Date</label>
@@ -933,6 +955,8 @@
     // Tab switching
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        document.querySelector('.tab[data-tab="sales"]').classList.add('active');
+        document.getElementById('sales-tab').classList.add('active');
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(c => c.classList.remove('active'));
         
