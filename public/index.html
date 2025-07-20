@@ -1,576 +1,134 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>ScrubberPro - Business Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stainless Steel Scrubber Business</title>
   <style>
-    :root {
-      --primary: #2c3e50;
-      --secondary: #3498db;
-      --success: #28a745;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --light: #f8f9fa;
-      --dark: #343a40;
-    }
-    
     body {
+      margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
-      max-width: 1000px;
-      margin: auto;
+      background: #f4f8fb;
       color: #333;
     }
-    
-    h1 {
+    header {
+      background-color: #004d66;
+      color: white;
+      padding: 20px;
       text-align: center;
-      color: var(--primary);
-      margin-bottom: 30px;
+      font-size: 28px;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-      margin-bottom: 30px;
+    main {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
-    
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      text-align: center;
+    form {
+      display: flex;
+      flex-direction: column;
     }
-    
-    .card h3 {
-      margin-top: 0;
-      color: var(--primary);
+    label {
+      margin: 12px 0 6px;
+      font-weight: bold;
+    }
+    input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
       font-size: 16px;
     }
-    
-    .card .value {
-      font-size: 24px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-    
-    .card.profit .value { color: var(--success); }
-    .card.expense .value { color: var(--danger); }
-    .card.sales .value { color: var(--secondary); }
-    .card.production .value { color: var(--warning); }
-    
-    .tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-    }
-    
-    .tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      background: #eee;
-      margin-right: 5px;
-      border-radius: 5px 5px 0 0;
-    }
-    
-    .tab.active {
-      background: var(--primary);
-      color: white;
-    }
-    
-    .tab-content {
-      display: none;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
-    
-    form {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-    }
-    
-    .form-group {
-      margin-bottom: 15px;
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
-    }
-    
-    input, select {
-      width: 100%;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ddd;
-      box-sizing: border-box;
-    }
-    
     button {
-      padding: 10px 15px;
-      border-radius: 5px;
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #007b8a;
+      color: white;
       border: none;
-      font-weight: bold;
+      border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: background 0.3s ease;
     }
-    
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
+    button:hover {
+      background-color: #005a66;
     }
-    
-    .btn-primary:hover {
-      background-color: #1a252f;
+    .message {
+      margin-top: 15px;
+      font-size: 16px;
+      text-align: center;
+      color: green;
     }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    
-    th {
-      background-color: var(--primary);
-      color: white;
-    }
-    
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    
-    .alert {
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-    }
-    
-    .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    
-    .alert-danger {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    
-    .chart-container {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      height: 300px;
-    }
-    
-    @media (max-width: 768px) {
-      .dashboard {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
+    .report-link {
+      display: block;
+      text-align: center;
+      margin-top: 25px;
+      color: #004d66;
+      font-weight: bold;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h1>ScrubberPro Business Tracker</h1>
-  
-  <div class="dashboard">
-    <div class="card sales">
-      <h3>Today's Sales</h3>
-      <div class="value" id="todaySales">0 sheets</div>
-      <div class="value">₹<span id="todaySalesAmount">0</span></div>
-    </div>
-    
-    <div class="card production">
-      <h3>Today's Production</h3>
-      <div class="value" id="todayProduction">0 sheets</div>
-      <div>Cost: ₹<span id="todayProductionCost">0</span></div>
-    </div>
-    
-    <div class="card profit">
-      <h3>Today's Profit</h3>
-      <div class="value">₹<span id="todayProfit">0</span></div>
-      <div id="profitPerSheet">₹0/sheet</div>
-    </div>
-    
-    <div class="card expense">
-      <h3>Today's Expenses</h3>
-      <div class="value">₹<span id="todayExpenses">0</span></div>
-    </div>
-  </div>
-  
-  <div class="tabs">
-    <div class="tab active" data-tab="sales">Sales</div>
-    <div class="tab" data-tab="expenses">Expenses</div>
-    <div class="tab" data-tab="reports">Reports</div>
-    <div class="tab" data-tab="settings">Settings</div>
-  </div>
-  
-  <div id="alert" class="alert" style="display:none;"></div>
-  
-  <!-- Sales Tab -->
-  <div class="tab-content active" id="sales-tab">
-    <form id="sales-form">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="date">Date</label>
-          <input type="date" id="date" name="date" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="customer">Customer Name</label>
-          <input type="text" id="customer" name="customer" placeholder="Wholesaler name">
-        </div>
-        
-        <div class="form-group">
-          <label for="sheets">Sheets Sold</label>
-          <input type="number" id="sheets" name="sheets" placeholder="Number of sheets" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="price">Price per Sheet (₹)</label>
-          <input type="number" id="price" name="price" placeholder="60-100" min="60" max="100" required>
-        </div>
-      </div>
-      
-      <button type="submit" class="btn-primary">Record Sale</button>
+  <header>
+    Scrubber Business Tracker
+  </header>
+  <main>
+    <form id="entryForm">
+      <label for="date">Date:</label>
+      <input type="date" name="date" required />
+
+      <label for="sheetsSold">Sheets Sold:</label>
+      <input type="number" name="sheetsSold" min="0" required />
+
+      <label for="pricePerSheet">Selling Price per Sheet (₹):</label>
+      <input type="number" name="pricePerSheet" min="47" required />
+
+      <label for="rawMaterial">Raw Material Expense (₹):</label>
+      <input type="number" name="rawMaterial" min="0" required />
+
+      <label for="plasticCups">Plastic Cups Expense (₹):</label>
+      <input type="number" name="plasticCups" min="0" required />
+
+      <label for="petrol">Petrol Expense (₹):</label>
+      <input type="number" name="petrol" min="0" required />
+
+      <button type="submit">Submit Entry</button>
+      <div class="message" id="message"></div>
     </form>
-    
-    <h2>Recent Sales</h2>
-    <table id="sales-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Customer</th>
-          <th>Sheets</th>
-          <th>Price</th>
-          <th>Total</th>
-          <th>Profit</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Sales data will be populated here -->
-      </tbody>
-    </table>
-  </div>
-  
-  <!-- Expenses Tab -->
-  <div class="tab-content" id="expenses-tab">
-    <form id="expenses-form">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="expense-date">Date</label>
-          <input type="date" id="expense-date" name="expense-date" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="expense-type">Expense Type</label>
-          <select id="expense-type" name="expense-type" required>
-            <option value="">Select type</option>
-            <option value="raw">Raw Material</option>
-            <option value="plastic">Plastic Cups</option>
-            <option value="petrol">Petrol</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="expense-amount">Amount (₹)</label>
-          <input type="number" id="expense-amount" name="expense-amount" placeholder="Amount" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="expense-notes">Notes</label>
-          <input type="text" id="expense-notes" name="expense-notes" placeholder="Additional details">
-        </div>
-      </div>
-      
-      <button type="submit" class="btn-primary">Record Expense</button>
-    </form>
-    
-    <h2>Recent Expenses</h2>
-    <table id="expenses-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Type</th>
-          <th>Amount</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Expenses data will be populated here -->
-      </tbody>
-    </table>
-  </div>
-  
-  <!-- Reports Tab -->
-  <div class="tab-content" id="reports-tab">
-    <div class="form-grid">
-      <div class="form-group">
-        <label for="report-type">Report Type</label>
-        <select id="report-type" name="report-type">
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-          <option value="custom">Custom Range</option>
-        </select>
-      </div>
-      
-      <div class="form-group" id="custom-date-range" style="display:none;">
-        <label for="start-date">Date Range</label>
-        <div style="display: flex; gap: 10px;">
-          <input type="date" id="start-date" style="flex:1;">
-          <input type="date" id="end-date" style="flex:1;">
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <button id="generate-report" class="btn-primary">Generate Report</button>
-      </div>
-    </div>
-    
-    <div class="chart-container">
-      <canvas id="profit-chart"></canvas>
-    </div>
-    
-    <h2>Report Summary</h2>
-    <table id="report-summary">
-      <thead>
-        <tr>
-          <th>Period</th>
-          <th>Sheets Sold</th>
-          <th>Total Sales</th>
-          <th>Total Expenses</th>
-          <th>Net Profit</th>
-          <th>Profit/Sheet</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Report data will be populated here -->
-      </tbody>
-    </table>
-  </div>
-  
-  <!-- Settings Tab -->
-  <div class="tab-content" id="settings-tab">
-    <form id="settings-form">
-      <div class="form-group">
-        <label for="production-cost">Production Cost per Sheet (₹)</label>
-        <input type="number" id="production-cost" name="production-cost" value="47" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="default-price">Default Selling Price (₹)</label>
-        <input type="number" id="default-price" name="default-price" value="80" min="60" max="100" required>
-      </div>
-      
-      <button type="submit" class="btn-primary">Save Settings</button>
-    </form>
-    
-    <div style="margin-top: 30px;">
-      <button id="export-data" class="btn-primary">Export Data</button>
-      <button id="import-data" class="btn-primary" style="margin-left: 10px;">Import Data</button>
-      <input type="file" id="import-file" style="display:none;">
-    </div>
-    
-    <div style="margin-top: 30px;">
-      <button id="reset-data" class="btn-primary" style="background-color: var(--danger);">Reset All Data</button>
-    </div>
-  </div>
+
+    <a href="/report.html" class="report-link">📊 View Report</a>
+  </main>
 
   <script>
-    // Production cost per sheet
-    const PRODUCTION_COST = 47;
-    
-    // DOM elements
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const alertBox = document.getElementById('alert');
-    
-    // Initialize with today's date
-    document.getElementById('date').valueAsDate = new Date();
-    document.getElementById('expense-date').valueAsDate = new Date();
-    
-    // Tab switching
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        
-        tab.classList.add('active');
-        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-      });
-    });
-    
-    // Report type change
-    document.getElementById('report-type').addEventListener('change', function() {
-      document.getElementById('custom-date-range').style.display = 
-        this.value === 'custom' ? 'block' : 'none';
-    });
-    
-    // Sales form submission
-    document.getElementById('sales-form').addEventListener('submit', function(e) {
+    document.getElementById('entryForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
-      const date = this.date.value;
-      const customer = this.customer.value || 'Walk-in';
-      const sheets = parseInt(this.sheets.value);
-      const price = parseInt(this.price.value);
-      const total = sheets * price;
-      const cost = sheets * PRODUCTION_COST;
-      const profit = total - cost;
-      
-      // In a real app, you would save this to a database
-      // For now, we'll just add to the table and update dashboard
-      addSaleToTable({ date, customer, sheets, price, total, profit });
-      updateDashboard();
-      
-      showAlert('Sale recorded successfully!', 'success');
-      this.reset();
-      this.date.valueAsDate = new Date();
-    });
-    
-    // Expenses form submission
-    document.getElementById('expenses-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const date = this['expense-date'].value;
-      const type = this['expense-type'].value;
-      const amount = parseInt(this['expense-amount'].value);
-      const notes = this['expense-notes'].value;
-      
-      // In a real app, you would save this to a database
-      addExpenseToTable({ date, type, amount, notes });
-      updateDashboard();
-      
-      showAlert('Expense recorded successfully!', 'success');
-      this.reset();
-      this['expense-date'].valueAsDate = new Date();
-    });
-    
-    // Helper functions
-    function addSaleToTable(sale) {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${sale.date}</td>
-        <td>${sale.customer}</td>
-        <td>${sale.sheets}</td>
-        <td>₹${sale.price}</td>
-        <td>₹${sale.total}</td>
-        <td>₹${sale.profit}</td>
-      `;
-      document.querySelector('#sales-table tbody').prepend(row);
-    }
-    
-    function addExpenseToTable(expense) {
-      const typeNames = {
-        raw: 'Raw Material',
-        plastic: 'Plastic Cups',
-        petrol: 'Petrol',
-        other: 'Other'
+      const form = e.target;
+      const data = {
+        date: form.date.value,
+        sheetsSold: +form.sheetsSold.value,
+        pricePerSheet: +form.pricePerSheet.value,
+        rawMaterial: +form.rawMaterial.value,
+        plasticCups: +form.plasticCups.value,
+        petrol: +form.petrol.value,
       };
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${expense.date}</td>
-        <td>${typeNames[expense.type]}</td>
-        <td>₹${expense.amount}</td>
-        <td>${expense.notes || '-'}</td>
-      `;
-      document.querySelector('#expenses-table tbody').prepend(row);
-    }
-    
-    function updateDashboard() {
-      // In a real app, you would calculate these from your database
-      const todaySales = 105;
-      const todaySalesAmount = 8400;
-      const todayProduction = 120;
-      const todayProductionCost = todayProduction * PRODUCTION_COST;
-      const todayProfit = 1365;
-      const todayExpenses = 1200;
-      const profitPerSheet = (todayProfit / todaySales).toFixed(2);
-      
-      document.getElementById('todaySales').textContent = `${todaySales} sheets`;
-      document.getElementById('todaySalesAmount').textContent = todaySalesAmount;
-      document.getElementById('todayProduction').textContent = `${todayProduction} sheets`;
-      document.getElementById('todayProductionCost').textContent = todayProductionCost;
-      document.getElementById('todayProfit').textContent = todayProfit;
-      document.getElementById('profitPerSheet').textContent = `₹${profitPerSheet}/sheet`;
-      document.getElementById('todayExpenses').textContent = todayExpenses;
-    }
-    
-    function showAlert(message, type) {
-      alertBox.textContent = message;
-      alertBox.className = `alert alert-${type}`;
-      alertBox.style.display = 'block';
-      
-      setTimeout(() => {
-        alertBox.style.display = 'none';
-      }, 3000);
-    }
-    
-    // Initialize dashboard
-    updateDashboard();
-    
-    // Sample data for demo
-    addSaleToTable({
-      date: '2023-06-15',
-      customer: 'ABC Wholesale',
-      sheets: 50,
-      price: 80,
-      total: 4000,
-      profit: 1650
-    });
-    
-    addSaleToTable({
-      date: '2023-06-15',
-      customer: 'XYZ Distributors',
-      sheets: 30,
-      price: 85,
-      total: 2550,
-      profit: 1140
-    });
-    
-    addExpenseToTable({
-      date: '2023-06-15',
-      type: 'raw',
-      amount: 800,
-      notes: 'Stainless steel wire'
-    });
-    
-    addExpenseToTable({
-      date: '2023-06-15',
-      type: 'petrol',
-      amount: 500,
-      notes: 'Delivery to customers'
+
+      const response = await fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const messageEl = document.getElementById('message');
+      if (response.ok) {
+        messageEl.textContent = "✅ Entry saved successfully!";
+        form.reset();
+      } else {
+        messageEl.textContent = "❌ Failed to save entry.";
+      }
     });
   </script>
 </body>
