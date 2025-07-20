@@ -469,6 +469,37 @@
       from { opacity: 0; transform: translateY(-20px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: none;
+}
+
+.alert-content {
+  padding: 15px 20px;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+.alert-success {
+  background-color: #4cc9f0;
+}
+
+.alert-danger {
+  background-color: #f72585;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
     
     .modal-header {
       padding: 20px;
@@ -589,10 +620,11 @@
     
     <div class="tabs-container">
       <div class="tabs">
-        <div class="tab active" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
-        <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
-        <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
-        <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
+  <div class="tab active" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
+  <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
+  <div class="tab" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
+  <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
+</div>
       </div>
       
       <div id="alert" class="alert" style="display: none;"></div>
@@ -941,9 +973,38 @@
     
     // Print report
     document.getElementById('printReport').addEventListener('click', () => {
-      document.getElementById('current-report-date').textContent = new Date().toLocaleDateString();
-      window.print();
-    });
+  const reportContent = document.getElementById('print-container').innerHTML;
+  const reportTitle = `ScrubberPro_Report_${new Date().toISOString().split('T')[0]}`;
+  
+  // Create a new window with the report
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${reportTitle}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { color: #4361ee; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .chart-container { margin: 30px 0; }
+      </style>
+    </head>
+    <body>
+      ${reportContent}
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(() => window.close(), 500);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+});
     
     // Sales Form Submission
     salesForm.addEventListener('submit', async function(e) {
@@ -1326,120 +1387,92 @@
       const profitData = chartData.map(item => item.profit);
       
       // Sales Chart
-      const salesCtx = document.getElementById('salesChart').getContext('2d');
-      
-      if (salesChart) {
-        salesChart.destroy();
-      }
-      
-      salesChart = new Chart(salesCtx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Sheets Sold',
-              data: sheetsSoldData,
-              backgroundColor: 'rgba(76, 201, 240, 0.7)',
-              borderColor: 'rgba(76, 201, 240, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Revenue (₹)',
-              data: revenueData,
-              backgroundColor: 'rgba(67, 97, 238, 0.7)',
-              borderColor: 'rgba(67, 97, 238, 1)',
-              borderWidth: 1,
-              type: 'line',
-              yAxisID: 'y1'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Sheets Sold'
-              }
-            },
-            y1: {
-              beginAtZero: true,
-              position: 'right',
-              grid: {
-                drawOnChartArea: false
-              },
-              title: {
-                display: true,
-                text: 'Revenue (₹)'
-              }
-            }
-          }
+      // In the updateCharts function:
+// Sales Chart (Line only)
+salesChart = new Chart(salesCtx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Sheets Sold',
+      data: sheetsSoldData,
+      backgroundColor: 'rgba(76, 201, 240, 0.2)',
+      borderColor: 'rgba(76, 201, 240, 1)',
+      borderWidth: 2,
+      tension: 0.4,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Sheets Sold'
         }
-      });
-      
-      // Profit Chart
-      const profitCtx = document.getElementById('profitChart').getContext('2d');
-      
-      if (profitChart) {
-        profitChart.destroy();
       }
-      
-      profitChart = new Chart(profitCtx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Revenue (₹)',
-              data: revenueData,
-              backgroundColor: 'rgba(67, 97, 238, 0.7)',
-              borderColor: 'rgba(67, 97, 238, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Production Cost (₹)',
-              data: productionCostData,
-              backgroundColor: 'rgba(248, 150, 30, 0.7)',
-              borderColor: 'rgba(248, 150, 30, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Profit (₹)',
-              data: profitData,
-              backgroundColor: 'rgba(76, 201, 240, 0.7)',
-              borderColor: 'rgba(76, 201, 240, 1)',
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Amount (₹)'
-              }
-            }
-          }
-        }
-      });
     }
+  }
+});
+
+// Profit Chart (Stacked bar)
+profitChart = new Chart(profitCtx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Revenue',
+        data: revenueData,
+        backgroundColor: 'rgba(67, 97, 238, 0.7)'
+      },
+      {
+        label: 'Cost',
+        data: productionCostData,
+        backgroundColor: 'rgba(248, 150, 30, 0.7)'
+      },
+      {
+        label: 'Profit',
+        data: profitData,
+        backgroundColor: 'rgba(76, 201, 240, 0.7)'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: {
+        stacked: true,
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Amount (₹)'
+        }
+      }
+    }
+  }
+});
+    
     
     // Show Alert
-    function showAlert(message, type) {
-      alertBox.textContent = message;
-      alertBox.className = `alert alert-${type}`;
-      alertBox.style.display = 'block';
-      
-      setTimeout(() => {
-        alertBox.style.display = 'none';
-      }, 5000);
-    }
+   function showAlert(message, type) {
+  alertBox.innerHTML = `
+    <div class="alert-content alert-${type}">
+      <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+      ${message}
+    </div>
+  `;
+  alertBox.style.display = 'block';
+  
+  setTimeout(() => {
+    alertBox.style.display = 'none';
+  }, 3000);
+}
     
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', () => {
