@@ -3,124 +3,410 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scrubber Business Tracker</title>
+  <title>ScrubberPro - Business Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #3498db;
+      --success: #28a745;
+      --danger: #dc3545;
+      --warning: #ffc107;
+      --light: #f8f9fa;
+      --dark: #343a40;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f5f5f5;
     }
-    h1 {
+    
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 20px 0;
       text-align: center;
-      color: #2c3e50;
+      margin-bottom: 30px;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .form-container, .report-container {
-      background-color: white;
+    
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+    
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 10px;
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    
+    .card .value {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin: 5px 0;
+    }
+    
+    .card .subtext {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    
+    .sales-card { border-left: 4px solid var(--secondary); }
+    .production-card { border-left: 4px solid var(--warning); }
+    .profit-card { border-left: 4px solid var(--success); }
+    .expense-card { border-left: 4px solid var(--danger); }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      background: #eee;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .tab:hover:not(.active) {
+      background: #ddd;
+    }
+    
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 0 5px 5px 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
       margin-bottom: 20px;
     }
+    
     .form-group {
       margin-bottom: 15px;
     }
+    
     label {
       display: block;
       margin-bottom: 5px;
-      font-weight: bold;
+      font-weight: 500;
+      color: var(--primary);
     }
-    input {
+    
+    input, select {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #28a745;
-      color: white;
-      border: none;
       padding: 10px 15px;
-      border-radius: 4px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+    
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 16px;
+      transition: all 0.3s;
     }
-    button:hover {
-      background-color: #218838;
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
     }
-    #result {
-      margin-top: 15px;
-      padding: 10px;
-      border-radius: 4px;
-      display: none;
+    
+    .btn-primary:hover {
+      background-color: #1a252f;
     }
-    .success {
-      background-color: #d4edda;
-      color: #155724;
-      display: block;
+    
+    .btn-secondary {
+      background-color: var(--secondary);
+      color: white;
     }
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
-      display: block;
+    
+    .btn-secondary:hover {
+      background-color: #1d6fa5;
     }
+    
+    .btn-success {
+      background-color: var(--success);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background-color: #1e7e34;
+    }
+    
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: #bd2130;
+    }
+    
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
     }
+    
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
+      padding: 12px 15px;
       text-align: left;
+      border-bottom: 1px solid #ddd;
     }
+    
     th {
-      background-color: #2c3e50;
+      background-color: var(--primary);
       color: white;
+      font-weight: 500;
     }
+    
     tr:nth-child(even) {
-      background-color: #f2f2f2;
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-title {
+      margin-bottom: 15px;
+      color: var(--primary);
+      font-weight: 500;
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      display: block;
+    }
+    
+    .alert-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+    
+    .report-actions {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Scrubber Business Tracker</h1>
+  <header>
+    <div class="container">
+      <h1><i class="fas fa-scrubber"></i> ScrubberPro Business Manager</h1>
+      <p>Track your stainless steel scrubber business performance</p>
+    </div>
+  </header>
   
-  <div class="form-container">
-    <h2>Record Daily Data</h2>
-    <form id="sales-form">
-      <div class="form-group">
-        <label for="sheets">Sheets Produced:</label>
-        <input type="number" id="sheets" name="sheets" required>
+  <div class="container">
+    <div id="alert" class="alert"></div>
+    
+    <div class="dashboard">
+      <div class="card sales-card">
+        <h3>Today's Sales</h3>
+        <div class="value" id="todaySales">0 sheets</div>
+        <div class="value">₹<span id="todaySalesAmount">0</span></div>
+        <div class="subtext">Avg. ₹<span id="todayAvgPrice">0</span>/sheet</div>
       </div>
-      <div class="form-group">
-        <label for="price">Selling Price per Sheet (₹):</label>
-        <input type="number" id="price" name="price" required>
+      
+      <div class="card production-card">
+        <h3>Today's Production</h3>
+        <div class="value" id="todayProduction">0 sheets</div>
+        <div class="subtext">Cost: ₹<span id="todayProductionCost">0</span></div>
       </div>
-      <div class="form-group">
-        <label for="raw">Raw Material Expense (₹):</label>
-        <input type="number" id="raw" name="raw" required>
+      
+      <div class="card profit-card">
+        <h3>Today's Profit</h3>
+        <div class="value">₹<span id="todayProfit">0</span></div>
+        <div class="subtext" id="profitPerSheet">₹0/sheet</div>
       </div>
-      <div class="form-group">
-        <label for="plastic">Plastic Cups Expense (₹):</label>
-        <input type="number" id="plastic" name="plastic" required>
+      
+      <div class="card expense-card">
+        <h3>Today's Expenses</h3>
+        <div class="value">₹<span id="todayExpenses">0</span></div>
+        <div class="subtext">Raw: ₹<span id="todayRawCost">0</span></div>
       </div>
-      <div class="form-group">
-        <label for="petrol">Petrol Expense (₹):</label>
-        <input type="number" id="petrol" name="petrol" required>
+    </div>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="sales">Sales Entry</div>
+      <div class="tab" data-tab="transactions">Transactions</div>
+      <div class="tab" data-tab="reports">Reports & Analysis</div>
+    </div>
+    
+    <!-- Sales Entry Tab -->
+    <div class="tab-content active" id="sales-tab">
+      <form id="sales-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="sheets">Sheets Sold</label>
+            <input type="number" id="sheets" name="sheets" min="1" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="price">Price per Sheet (₹)</label>
+            <input type="number" id="price" name="price" min="60" max="100" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="rawMaterialCost">Raw Material Cost (₹)</label>
+            <input type="number" id="rawMaterialCost" name="rawMaterialCost" min="0" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="plasticCost">Plastic Cups Cost (₹)</label>
+            <input type="number" id="plasticCost" name="plasticCost" min="0" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="petrolCost">Petrol Cost (₹)</label>
+            <input type="number" id="petrolCost" name="petrolCost" min="0" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="notes">Notes</label>
+          <input type="text" id="notes" name="notes" placeholder="Any additional information">
+        </div>
+        
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-save"></i> Record Sale
+        </button>
+      </form>
+    </div>
+    
+    <!-- Transactions Tab -->
+    <div class="tab-content" id="transactions-tab">
+      <div class="filter-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="startDate">From Date</label>
+            <input type="date" id="startDate">
+          </div>
+          
+          <div class="form-group">
+            <label for="endDate">To Date</label>
+            <input type="date" id="endDate">
+          </div>
+          
+          <div class="form-group">
+            <button id="filterTransactions" class="btn-secondary">
+              <i class="fas fa-filter"></i> Filter
+            </button>
+            <button id="resetFilters" class="btn-danger">
+              <i class="fas fa-times"></i> Reset
+            </button>
+          </div>
+        </div>
       </div>
-      <button type="submit">Save Data</button>
-    </form>
-    <div id="result"></div>
-  </div>
-  
-  <div class="report-container">
-    <h2>Business Report</h2>
-    <button id="load-report">Load Report Data</button>
-    <div id="report-data">
-      <table id="report-table">
+      
+      <table id="transactions-table">
         <thead>
           <tr>
             <th>Date</th>
@@ -130,29 +416,128 @@
             <th>Plastic</th>
             <th>Petrol</th>
             <th>Profit</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <!-- Report data will be loaded here -->
+          <!-- Transactions will be loaded here -->
         </tbody>
       </table>
+    </div>
+    
+    <!-- Reports Tab -->
+    <div class="tab-content" id="reports-tab">
+      <div class="report-actions">
+        <select id="report-period" class="btn-secondary">
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+          <option value="all">All Time</option>
+        </select>
+        
+        <button id="generateReport" class="btn-primary">
+          <i class="fas fa-chart-bar"></i> Generate Report
+        </button>
+        
+        <button id="downloadReport" class="btn-success">
+          <i class="fas fa-download"></i> Download Report
+        </button>
+      </div>
+      
+      <div class="chart-container">
+        <h3 class="chart-title">Sales Performance</h3>
+        <canvas id="salesChart"></canvas>
+      </div>
+      
+      <div class="chart-container">
+        <h3 class="chart-title">Profit Analysis</h3>
+        <canvas id="profitChart"></canvas>
+      </div>
+      
+      <div class="chart-container">
+        <h3 class="chart-title">Expense Breakdown</h3>
+        <canvas id="expenseChart"></canvas>
+      </div>
+      
+      <div class="card">
+        <h3>Summary Report</h3>
+        <table id="summary-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Total Sheets Sold</td>
+              <td id="totalSheets">0</td>
+            </tr>
+            <tr>
+              <td>Total Sales Amount</td>
+              <td id="totalSales">₹0</td>
+            </tr>
+            <tr>
+              <td>Total Production Cost</td>
+              <td id="totalProductionCost">₹0</td>
+            </tr>
+            <tr>
+              <td>Total Expenses</td>
+              <td id="totalExpenses">₹0</td>
+            </tr>
+            <tr>
+              <td>Total Profit</td>
+              <td id="totalProfit">₹0</td>
+            </tr>
+            <tr>
+              <td>Average Price per Sheet</td>
+              <td id="avgPrice">₹0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <script>
-    document.getElementById('sales-form').addEventListener('submit', async function(e) {
+    // DOM Elements
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const alertBox = document.getElementById('alert');
+    const salesForm = document.getElementById('sales-form');
+    const todayDate = new Date().toISOString().split('T')[0];
+    
+    // Set today's date as default
+    document.getElementById('date').value = todayDate;
+    
+    // Tab switching
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+      });
+    });
+    
+    // Sales Form Submission
+    salesForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const formData = {
-        sheets: this.sheets.value,
-        price: this.price.value,
-        raw: this.raw.value,
-        plastic: this.plastic.value,
-        petrol: this.petrol.value
+        date: this.date.value,
+        sheets: parseInt(this.sheets.value),
+        price: parseInt(this.price.value),
+        rawMaterialCost: parseInt(this.rawMaterialCost.value),
+        plasticCost: parseInt(this.plasticCost.value),
+        petrolCost: parseInt(this.petrolCost.value),
+        notes: this.notes.value
       };
       
       try {
-        const response = await fetch('/submit', {
+        const response = await fetch('/api/sales', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -160,51 +545,255 @@
           body: JSON.stringify(formData)
         });
         
-        const result = await response.text();
-        const resultDiv = document.getElementById('result');
-        resultDiv.textContent = result;
-        resultDiv.className = 'success';
+        const result = await response.json();
         
-        // Reset form
-        this.reset();
+        if (result.success) {
+          showAlert('Sale recorded successfully!', 'success');
+          this.reset();
+          this.date.value = todayDate;
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(`Error: ${result.message}`, 'danger');
+        }
       } catch (error) {
-        const resultDiv = document.getElementById('result');
-        resultDiv.textContent = 'Error saving data. Please try again.';
-        resultDiv.className = 'error';
         console.error('Error:', error);
+        showAlert('Error saving data. Please try again.', 'danger');
       }
     });
     
-    document.getElementById('load-report').addEventListener('click', async function() {
+    // Filter Transactions
+    document.getElementById('filterTransactions').addEventListener('click', loadTransactions);
+    document.getElementById('resetFilters').addEventListener('click', () => {
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      loadTransactions();
+    });
+    
+    // Generate Report
+    document.getElementById('generateReport').addEventListener('click', generateReport);
+    document.getElementById('downloadReport').addEventListener('click', downloadReport);
+    
+    // Helper Functions
+    function showAlert(message, type) {
+      alertBox.textContent = message;
+      alertBox.className = `alert alert-${type}`;
+      
+      setTimeout(() => {
+        alertBox.className = 'alert';
+        alertBox.textContent = '';
+      }, 3000);
+    }
+    
+    async function updateDashboard() {
       try {
-        const response = await fetch('/report-data');
-        const data = await response.json();
+        const response = await fetch('/api/reports/summary?period=today');
+        const result = await response.json();
         
-        const tableBody = document.querySelector('#report-table tbody');
-        tableBody.innerHTML = '';
-        
-        data.forEach(item => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${new Date(item.date).toLocaleDateString()}</td>
-            <td>${item.sheets}</td>
-            <td>₹${item.price}</td>
-            <td>₹${item.raw}</td>
-            <td>₹${item.plastic}</td>
-            <td>₹${item.petrol}</td>
-            <td>₹${item.profit || (item.sheets * item.price - (item.raw + item.plastic + item.petrol))}</td>
-          `;
-          tableBody.appendChild(row);
-        });
+        if (result.success) {
+          const data = result.data;
+          
+          document.getElementById('todaySales').textContent = `${data.totalSheets || 0} sheets`;
+          document.getElementById('todaySalesAmount').textContent = data.totalSales || 0;
+          document.getElementById('todayAvgPrice').textContent = data.avgPricePerSheet || 0;
+          document.getElementById('todayProduction').textContent = data.totalSheets || 0;
+          document.getElementById('todayProductionCost').textContent = data.totalProductionCost || 0;
+          document.getElementById('todayProfit').textContent = data.totalProfit || 0;
+          document.getElementById('todayExpenses').textContent = data.totalExpenses || 0;
+          
+          if (data.totalSheets) {
+            const profitPerSheet = (data.totalProfit / data.totalSheets).toFixed(2);
+            document.getElementById('profitPerSheet').textContent = `₹${profitPerSheet}/sheet`;
+          }
+        }
       } catch (error) {
-        console.error('Error loading report:', error);
-        alert('Error loading report data');
+        console.error('Error updating dashboard:', error);
       }
-    });
+    }
     
-    // Load report data when page loads
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('load-report').click();
+    async function loadTransactions() {
+      try {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        let url = '/api/sales';
+        if (startDate && endDate) {
+          url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success) {
+          const tbody = document.querySelector('#transactions-table tbody');
+          tbody.innerHTML = '';
+          
+          result.data.forEach(sale => {
+            const profit = (sale.sheets * sale.price) - (sale.sheets * 47) - sale.rawMaterialCost - sale.plasticCost - sale.petrolCost;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${new Date(sale.date).toLocaleDateString()}</td>
+              <td>${sale.sheets}</td>
+              <td>₹${sale.price}</td>
+              <td>₹${sale.rawMaterialCost}</td>
+              <td>₹${sale.plasticCost}</td>
+              <td>₹${sale.petrolCost}</td>
+              <td>₹${profit.toFixed(2)}</td>
+              <td>
+                <button class="btn-danger" onclick="deleteTransaction('${sale._id}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading transactions:', error);
+        showAlert('Error loading transactions', 'danger');
+      }
+    }
+    
+    async function generateReport() {
+      try {
+        const period = document.getElementById('report-period').value;
+        const response = await fetch(`/api/reports/summary?period=${period}`);
+        const result = await response.json();
+        
+        if (result.success) {
+          const data = result.data;
+          
+          // Update summary table
+          document.getElementById('totalSheets').textContent = data.totalSheets || 0;
+          document.getElementById('totalSales').textContent = `₹${data.totalSales || 0}`;
+          document.getElementById('totalProductionCost').textContent = `₹${data.totalProductionCost || 0}`;
+          document.getElementById('totalExpenses').textContent = `₹${data.totalExpenses || 0}`;
+          document.getElementById('totalProfit').textContent = `₹${data.totalProfit || 0}`;
+          document.getElementById('avgPrice').textContent = `₹${data.avgPricePerSheet || 0}`;
+          
+          // Update charts (simplified - in real app you would fetch more detailed data)
+          updateCharts();
+        }
+      } catch (error) {
+        console.error('Error generating report:', error);
+        showAlert('Error generating report', 'danger');
+      }
+    }
+    
+    function updateCharts() {
+      // In a real app, you would fetch detailed data for charts
+      // This is a simplified version with dummy data
+      
+      // Sales Chart
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      new Chart(salesCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Sheets Sold',
+            data: [1200, 1900, 1500, 2000, 1800, 2200],
+            backgroundColor: 'rgba(52, 152, 219, 0.7)'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      
+      // Profit Chart
+      const profitCtx = document.getElementById('profitChart').getContext('2d');
+      new Chart(profitCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Profit (₹)',
+            data: [15600, 24700, 19500, 26000, 23400, 28600],
+            borderColor: 'rgba(40, 167, 69, 1)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true
+        }
+      });
+      
+      // Expense Chart
+      const expenseCtx = document.getElementById('expenseChart').getContext('2d');
+      new Chart(expenseCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Raw Materials', 'Plastic Cups', 'Petrol'],
+          datasets: [{
+            data: [12000, 5000, 3000],
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)'
+            ]
+          }]
+        }
+      });
+    }
+    
+    async function downloadReport() {
+      try {
+        const period = document.getElementById('report-period').value;
+        const response = await fetch(`/api/reports/download?period=${period}`);
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `scrubber-report-${period}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } else {
+          showAlert('Error generating PDF report', 'danger');
+        }
+      } catch (error) {
+        console.error('Error downloading report:', error);
+        showAlert('Error downloading report', 'danger');
+      }
+    }
+    
+    async function deleteTransaction(id) {
+      if (confirm('Are you sure you want to delete this transaction?')) {
+        try {
+          const response = await fetch(`/api/sales/${id}`, {
+            method: 'DELETE'
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showAlert('Transaction deleted successfully', 'success');
+            updateDashboard();
+            loadTransactions();
+          } else {
+            showAlert('Error deleting transaction', 'danger');
+          }
+        } catch (error) {
+          console.error('Error deleting transaction:', error);
+          showAlert('Error deleting transaction', 'danger');
+        }
+      }
+    }
+    
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDashboard();
+      loadTransactions();
+      generateReport();
     });
   </script>
 </body>
