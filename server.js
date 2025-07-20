@@ -17,12 +17,9 @@ mongoose.connect(MONGODB_URI, {
 // Define Mongoose Schema
 const SalesSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now, index: true },
-  sheets: { type: Number, required: true, min: 1 },
-  price: { type: Number, required: true, min: 60, max: 100 },
-  rawMaterialCost: { type: Number, required: true },
-  plasticCost: { type: Number, required: true },
-  petrolCost: { type: Number, required: true },
-  notes: { type: String }
+  sheetsSold: { type: Number, required: true, min: 1 },
+  totalRevenue: { type: Number, required: true },
+  petrolExpense: { type: Number, required: true }
 }, { timestamps: true });
 
 const Sale = mongoose.model('Sale', SalesSchema);
@@ -36,43 +33,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.post('/api/sales', async (req, res) => {
   try {
-    const productionCostPerSheet = 47;
-    const { date, sheets, price, rawMaterialCost, plasticCost, petrolCost, notes } = req.body;
+    const { date, sheetsSold, totalRevenue, petrolExpense } = req.body;
     
     const newSale = new Sale({
       date: date || new Date(),
-      sheets,
-      price,
-      rawMaterialCost,
-      plasticCost,
-      petrolCost,
-      notes
+      sheetsSold,
+      totalRevenue,
+      petrolExpense
     });
 
     await newSale.save();
-    res.status(201).json({ success: true, message: 'Sale recorded successfully', data: newSale });
+    res.status(201).json({ 
+      success: true, 
+      message: 'Sale recorded successfully',
+      data: {
+        ...newSale.toObject(),
+        productionCost: sheetsSold * 47,
+        netProfit: totalRevenue - (sheetsSold * 47) - petrolExpense
+      }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Error saving sale data', error: err.message });
-  }
-});
-
-app.get('/api/sales', async (req, res) => {
-  try {
-    const { startDate, endDate } = req.query;
-    let query = {};
-
-    if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    const sales = await Sale.find(query).sort({ date: -1 });
-    res.json({ success: true, data: sales });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Error fetching sales data', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error saving sale data', 
+      error: err.message 
+    });
   }
 });
 
@@ -110,43 +96,77 @@ app.get('/api/reports/summary', async (req, res) => {
       {
         $group: {
           _id: null,
-          totalSheets: { $sum: "$sheets" },
-          totalSales: { $sum: { $multiply: ["$sheets", "$price"] } },
-          totalProductionCost: { $sum: { $multiply: ["$sheets", 47] } },
-          totalExpenses: { $sum: { $add: ["$rawMaterialCost", "$plasticCost", "$petrolCost"] } },
-          avgPricePerSheet: { $avg: "$price" }
+          totalSheets: { $sum: "$sheetsSold" },
+          totalRevenue: { $sum: "$totalRevenue" },
+          totalProductionCost: { $sum: { $multiply: ["$sheetsSold", 47] } },
+          totalPetrolExpense: { $sum: "$petrolExpense" },
+          avgPricePerSheet: { $avg: { $divide: ["$totalRevenue", "$sheetsSold"] } }
         }
       },
       {
         $project: {
           _id: 0,
           totalSheets: 1,
-          totalSales: 1,
+          totalRevenue: 1,
           totalProductionCost: 1,
-          totalExpenses: 1,
-          totalProfit: { $subtract: ["$totalSales", { $add: ["$totalProductionCost", "$totalExpenses"] }] },
+          totalPetrolExpense: 1,
+          totalProfit: { 
+            $subtract: [
+              "$totalRevenue", 
+              { $add: ["$totalProductionCost", "$totalPetrolExpense"] }
+            ] 
+          },
           avgPricePerSheet: { $round: ["$avgPricePerSheet", 2] }
         }
       }
     ]);
 
-    res.json({ success: true, data: summary[0] || {} });
+    res.json({ 
+      success: true, 
+      data: summary[0] || {
+        totalSheets: 0,
+        totalRevenue: 0,
+        totalProductionCost: 0,
+        totalPetrolExpense: 0,
+        totalProfit: 0,
+        avgPricePerSheet: 0
+      } 
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Error generating report', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error generating report', 
+      error: err.message 
+    });
   }
 });
 
-// Simple JSON download instead of PDF
+// CSV download endpoint
 app.get('/api/reports/download', async (req, res) => {
   try {
     const sales = await Sale.find().sort({ date: -1 });
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', 'attachment; filename=scrubber-report.json');
-    res.send(JSON.stringify(sales, null, 2));
+    
+    // CSV header
+    let csv = 'Date,Sheets Sold,Revenue (₹),Production Cost (₹),Petrol Expense (₹),Profit (₹)\n';
+    
+    // CSV rows
+    sales.forEach(sale => {
+      const productionCost = sale.sheetsSold * 47;
+      const profit = sale.totalRevenue - productionCost - sale.petrolExpense;
+      csv += `${new Date(sale.date).toLocaleDateString()},${sale.sheetsSold},${sale.totalRevenue},${productionCost},${sale.petrolExpense},${profit}\n`;
+    });
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=scrubber-report.csv');
+    res.send(csv);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Error generating report', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error generating report', 
+      error: err.message 
+    });
   }
 });
 
