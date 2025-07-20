@@ -153,10 +153,6 @@
       gap: 8px;
     }
     
-    .card .subtext i {
-      font-size: 0.8rem;
-    }
-    
     .card.profit .value {
       color: var(--success);
     }
@@ -599,7 +595,7 @@
         <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
       </div>
       
-      <div id="alert" class="alert"></div>
+      <div id="alert" class="alert" style="display: none;"></div>
       
       <!-- Transactions Tab -->
       <div class="tab-content active" id="transactions-tab">
@@ -650,21 +646,19 @@
       <!-- Sales Entry Tab -->
       <div class="tab-content" id="sales-tab">
         <form id="salesForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
-              <input type="date" id="saleDate" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="sheetsSold"><i class="fas fa-layer-group"></i> Sheets Sold</label>
-              <input type="number" id="sheetsSold" min="1" placeholder="Number of sheets" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue (₹)</label>
-              <input type="number" id="totalRevenue" min="60" placeholder="Total amount received" required>
-            </div>
+          <div class="form-group">
+            <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
+            <input type="date" id="saleDate" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="sheetsSold"><i class="fas fa-layer-group"></i> Sheets Sold</label>
+            <input type="number" id="sheetsSold" min="1" placeholder="Number of sheets" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue (₹)</label>
+            <input type="number" id="totalRevenue" min="60" placeholder="Total amount received" required>
           </div>
           
           <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Sale</button>
@@ -674,29 +668,27 @@
       <!-- Expenses Tab -->
       <div class="tab-content" id="expenses-tab">
         <form id="expenseForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
-              <input type="date" id="expenseDate" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="expenseType"><i class="fas fa-tags"></i> Type</label>
-              <select id="expenseType" required>
-                <option value="petrol">Petrol</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="expenseAmount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
-              <input type="number" id="expenseAmount" min="0" placeholder="Amount spent" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="expenseDescription"><i class="fas fa-align-left"></i> Description</label>
-              <input type="text" id="expenseDescription" placeholder="What was this expense for?">
-            </div>
+          <div class="form-group">
+            <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
+            <input type="date" id="expenseDate" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="expenseType"><i class="fas fa-tags"></i> Type</label>
+            <select id="expenseType" required>
+              <option value="petrol">Petrol</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="expenseAmount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
+            <input type="number" id="expenseAmount" min="0" placeholder="Amount spent" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="expenseDescription"><i class="fas fa-align-left"></i> Description</label>
+            <input type="text" id="expenseDescription" placeholder="What was this expense for?">
           </div>
           
           <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Expense</button>
@@ -759,6 +751,10 @@
                 <tr>
                   <td>Petrol Expense</td>
                   <td id="report-petrol">₹0</td>
+                </tr>
+                <tr>
+                  <td>Other Expenses</td>
+                  <td id="report-other-expenses">₹0</td>
                 </tr>
                 <tr>
                   <td>Net Profit</td>
@@ -954,7 +950,7 @@
       e.preventDefault();
       
       const formData = {
-        date: this.date.value,
+        date: this.saleDate.value,
         sheetsSold: parseInt(this.sheetsSold.value),
         totalRevenue: parseInt(this.totalRevenue.value)
       };
@@ -973,7 +969,7 @@
         if (result.success) {
           showAlert('Sales entry saved successfully!', 'success');
           this.reset();
-          this.date.value = todayDate;
+          this.saleDate.value = todayDate;
           updateDashboard();
           loadTransactions();
         } else {
@@ -990,10 +986,10 @@
       e.preventDefault();
       
       const formData = {
-        date: this.date.value,
-        type: this.type.value,
-        amount: parseInt(this.amount.value),
-        description: this.description.value || `${this.type.value} expense`
+        date: this.expenseDate.value,
+        type: this.expenseType.value,
+        amount: parseInt(this.expenseAmount.value),
+        description: this.expenseDescription.value || `${this.expenseType.value} expense`
       };
       
       try {
@@ -1010,7 +1006,7 @@
         if (result.success) {
           showAlert('Expense saved successfully!', 'success');
           this.reset();
-          this.date.value = todayDate;
+          this.expenseDate.value = todayDate;
           updateDashboard();
           loadTransactions();
         } else {
@@ -1085,7 +1081,7 @@
             });
           }
           
-                    // Add event listeners to edit and delete buttons
+          // Add event listeners to edit and delete buttons
           document.querySelectorAll('.edit-sale').forEach(btn => {
             btn.addEventListener('click', () => editSale(btn.dataset.id));
           });
@@ -1161,12 +1157,12 @@
     // Update Sale
     document.getElementById('updateSaleBtn').addEventListener('click', async function() {
       const form = document.getElementById('editSaleForm');
-      const id = form.id.value;
+      const id = form.editSaleId.value;
       
       const formData = {
-        date: form.date.value,
-        sheetsSold: parseInt(form.sheetsSold.value),
-        totalRevenue: parseInt(form.totalRevenue.value)
+        date: form.editSaleDate.value,
+        sheetsSold: parseInt(form.editSheetsSold.value),
+        totalRevenue: parseInt(form.editTotalRevenue.value)
       };
       
       try {
@@ -1197,13 +1193,13 @@
     // Update Expense
     document.getElementById('updateExpenseBtn').addEventListener('click', async function() {
       const form = document.getElementById('editExpenseForm');
-      const id = form.id.value;
+      const id = form.editExpenseId.value;
       
       const formData = {
-        date: form.date.value,
-        type: form.type.value,
-        amount: parseInt(form.amount.value),
-        description: form.description.value
+        date: form.editExpenseDate.value,
+        type: form.editExpenseType.value,
+        amount: parseInt(form.editExpenseAmount.value),
+        description: form.editExpenseDescription.value
       };
       
       try {
@@ -1287,15 +1283,16 @@
           document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
           document.getElementById('totalPetrol').textContent = data.totalPetrol || 0;
           document.getElementById('netProfit').textContent = data.netProfit || 0;
-          document.getElementById('profitMargin').textContent = data.profitMargin ? data.profitMargin.toFixed(2) : 0;
+          document.getElementById('profitMargin').textContent = data.profitMargin || 0;
           
           // Update report summary
           document.getElementById('report-sheets').textContent = data.totalSheets || 0;
           document.getElementById('report-revenue').textContent = `₹${data.totalRevenue || 0}`;
           document.getElementById('report-production').textContent = `₹${data.totalProductionCost || 0}`;
           document.getElementById('report-petrol').textContent = `₹${data.totalPetrol || 0}`;
+          document.getElementById('report-other-expenses').textContent = `₹${data.totalOtherExpenses || 0}`;
           document.getElementById('report-profit').textContent = `₹${data.netProfit || 0}`;
-          document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin.toFixed(2)}%` : '0%';
+          document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin}%` : '0%';
           document.getElementById('report-avg-price').textContent = data.avgPricePerSheet ? `₹${data.avgPricePerSheet.toFixed(2)}` : '₹0';
           
           // Update charts
@@ -1311,6 +1308,23 @@
     
     // Update Charts
     function updateCharts(chartData) {
+      if (!chartData || chartData.length === 0) {
+        // Handle case when there's no data
+        if (salesChart) salesChart.destroy();
+        if (profitChart) profitChart.destroy();
+        
+        document.getElementById('salesChart').innerHTML = '<p>No sales data available for the selected period</p>';
+        document.getElementById('profitChart').innerHTML = '<p>No profit data available for the selected period</p>';
+        return;
+      }
+      
+      // Prepare labels and data
+      const labels = chartData.map(item => item.period);
+      const sheetsSoldData = chartData.map(item => item.sheetsSold);
+      const revenueData = chartData.map(item => item.revenue);
+      const productionCostData = chartData.map(item => item.productionCost);
+      const profitData = chartData.map(item => item.profit);
+      
       // Sales Chart
       const salesCtx = document.getElementById('salesChart').getContext('2d');
       
@@ -1321,18 +1335,18 @@
       salesChart = new Chart(salesCtx, {
         type: 'bar',
         data: {
-          labels: chartData.labels,
+          labels: labels,
           datasets: [
             {
               label: 'Sheets Sold',
-              data: chartData.sheetsSold,
+              data: sheetsSoldData,
               backgroundColor: 'rgba(76, 201, 240, 0.7)',
               borderColor: 'rgba(76, 201, 240, 1)',
               borderWidth: 1
             },
             {
               label: 'Revenue (₹)',
-              data: chartData.revenue,
+              data: revenueData,
               backgroundColor: 'rgba(67, 97, 238, 0.7)',
               borderColor: 'rgba(67, 97, 238, 1)',
               borderWidth: 1,
@@ -1376,25 +1390,25 @@
       profitChart = new Chart(profitCtx, {
         type: 'bar',
         data: {
-          labels: chartData.labels,
+          labels: labels,
           datasets: [
             {
               label: 'Revenue (₹)',
-              data: chartData.revenue,
+              data: revenueData,
               backgroundColor: 'rgba(67, 97, 238, 0.7)',
               borderColor: 'rgba(67, 97, 238, 1)',
               borderWidth: 1
             },
             {
               label: 'Production Cost (₹)',
-              data: chartData.productionCost,
+              data: productionCostData,
               backgroundColor: 'rgba(248, 150, 30, 0.7)',
               borderColor: 'rgba(248, 150, 30, 1)',
               borderWidth: 1
             },
             {
               label: 'Profit (₹)',
-              data: chartData.profit,
+              data: profitData,
               backgroundColor: 'rgba(76, 201, 240, 0.7)',
               borderColor: 'rgba(76, 201, 240, 1)',
               borderWidth: 1
