@@ -38,3 +38,13 @@ app.get('/all', async (req, res) => {
 
 const port = process.env.PORT || 10000;
 app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+
+app.get('/report', async (req, res) => {
+  try {
+    const allData = await Sale.find().sort({ date: -1 }); // newest first
+    res.json(allData);
+  } catch (err) {
+    res.status(500).send("Error fetching report.");
+  }
+});
+
