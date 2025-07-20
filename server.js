@@ -19,7 +19,7 @@ const SalesSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now, index: true },
   sheetsSold: { type: Number, required: true, min: 1 },
   totalRevenue: { type: Number, required: true },
-  pricePerSheet: { type: Number } // Added for easier reporting
+  pricePerSheet: { type: Number }
 }, { timestamps: true });
 
 const ExpenseSchema = new mongoose.Schema({
@@ -67,6 +67,68 @@ app.post('/api/sales', async (req, res) => {
   }
 });
 
+app.put('/api/sales/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, sheetsSold, totalRevenue } = req.body;
+    const pricePerSheet = totalRevenue / sheetsSold;
+    
+    const updatedSale = await Sale.findByIdAndUpdate(id, {
+      date,
+      sheetsSold,
+      totalRevenue,
+      pricePerSheet
+    }, { new: true });
+
+    if (!updatedSale) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Sale not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Sale updated successfully',
+      data: updatedSale
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating sale', 
+      error: err.message 
+    });
+  }
+});
+
+app.delete('/api/sales/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedSale = await Sale.findByIdAndDelete(id);
+
+    if (!deletedSale) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Sale not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Sale deleted successfully',
+      data: deletedSale
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting sale', 
+      error: err.message 
+    });
+  }
+});
+
 app.post('/api/expenses', async (req, res) => {
   try {
     const { date, type, amount, description } = req.body;
@@ -89,6 +151,99 @@ app.post('/api/expenses', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Error saving expense data', 
+      error: err.message 
+    });
+  }
+});
+
+app.put('/api/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, type, amount, description } = req.body;
+    
+    const updatedExpense = await Expense.findByIdAndUpdate(id, {
+      date,
+      type,
+      amount,
+      description
+    }, { new: true });
+
+    if (!updatedExpense) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Expense not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Expense updated successfully',
+      data: updatedExpense
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating expense', 
+      error: err.message 
+    });
+  }
+});
+
+app.delete('/api/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedExpense = await Expense.findByIdAndDelete(id);
+
+    if (!deletedExpense) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Expense not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Expense deleted successfully',
+      data: deletedExpense
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting expense', 
+      error: err.message 
+    });
+  }
+});
+
+app.get('/api/transactions', async (req, res) => {
+  try {
+    const { startDate, endDate, type } = req.query;
+    let query = {};
+
+    if (startDate && endDate) {
+      query.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    if (type === 'sales') {
+      const sales = await Sale.find(query).sort({ date: -1 });
+      return res.json({ success: true, data: sales });
+    } else if (type === 'expenses') {
+      const expenses = await Expense.find(query).sort({ date: -1 });
+      return res.json({ success: true, data: expenses });
+    } else {
+      const sales = await Sale.find(query).sort({ date: -1 });
+      const expenses = await Expense.find(query).sort({ date: -1 });
+      return res.json({ success: true, data: { sales, expenses } });
+    }
+  } catch (err) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching transactions', 
       error: err.message 
     });
   }
@@ -160,6 +315,80 @@ app.get('/api/reports/summary', async (req, res) => {
       }
     ]);
 
+    // Get chart data
+    let chartData = [];
+    if (period === 'month') {
+      chartData = await Sale.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: { $week: "$date" },
+            sheetsSold: { $sum: "$sheetsSold" },
+            totalRevenue: { $sum: "$totalRevenue" },
+            totalProfit: { 
+              $sum: { 
+                $subtract: [
+                  "$totalRevenue",
+                  { $add: [
+                    { $multiply: ["$sheetsSold", 47] },
+                    { $sum: [] } // Placeholder for petrol expenses
+                  ]}
+                ]
+              }
+            }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ]);
+    } else if (period === 'year') {
+      chartData = await Sale.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: { $month: "$date" },
+            sheetsSold: { $sum: "$sheetsSold" },
+            totalRevenue: { $sum: "$totalRevenue" },
+            totalProfit: { 
+              $sum: { 
+                $subtract: [
+                  "$totalRevenue",
+                  { $add: [
+                    { $multiply: ["$sheetsSold", 47] },
+                    { $sum: [] } // Placeholder for petrol expenses
+                  ]}
+                ]
+              }
+            }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ]);
+    } else {
+      // For daily/weekly
+      chartData = await Sale.aggregate([
+        { $match: dateFilter },
+        {
+          $group: {
+            _id: "$date",
+            sheetsSold: { $sum: "$sheetsSold" },
+            totalRevenue: { $sum: "$totalRevenue" },
+            totalProfit: { 
+              $sum: { 
+                $subtract: [
+                  "$totalRevenue",
+                  { $add: [
+                    { $multiply: ["$sheetsSold", 47] },
+                    { $sum: [] } // Placeholder for petrol expenses
+                  ]}
+                ]
+              }
+            }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ]);
+    }
+
     const result = {
       ...(salesSummary[0] || { 
         totalSheets: 0,
@@ -167,7 +396,8 @@ app.get('/api/reports/summary', async (req, res) => {
         totalProductionCost: 0,
         avgPricePerSheet: 0
       }),
-      ...(expensesSummary[0] || { totalPetrolExpense: 0 })
+      ...(expensesSummary[0] || { totalPetrolExpense: 0 }),
+      chartData: chartData
     };
 
     // Calculate profit
@@ -175,50 +405,6 @@ app.get('/api/reports/summary', async (req, res) => {
     result.avgPricePerSheet = result.avgPricePerSheet ? parseFloat(result.avgPricePerSheet.toFixed(2)) : 0;
 
     res.json({ success: true, data: result });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error generating report', 
-      error: err.message 
-    });
-  }
-});
-
-app.get('/api/reports/download', async (req, res) => {
-  try {
-    const { period } = req.query;
-    const sales = await Sale.find().sort({ date: -1 });
-    const expenses = await Expense.find({ type: 'petrol' }).sort({ date: -1 });
-    
-    // CSV header
-    let csv = 'Report Period,Sheets Sold,Revenue (₹),Production Cost (₹),Petrol Expense (₹),Profit (₹)\n';
-    
-    // Add summary data
-    const response = await fetch(`/api/reports/summary?period=${period}`);
-    const result = await response.json();
-    
-    if (result.success) {
-      const data = result.data;
-      csv += `${period},${data.totalSheets},${data.totalRevenue},${data.totalProductionCost},${data.totalPetrolExpense},${data.totalProfit}\n\n`;
-    }
-    
-    // Add detailed sales data
-    csv += 'Date,Sheets Sold,Revenue (₹),Price/Sheet (₹),Production Cost (₹)\n';
-    sales.forEach(sale => {
-      const productionCost = sale.sheetsSold * 47;
-      csv += `${new Date(sale.date).toLocaleDateString()},${sale.sheetsSold},${sale.totalRevenue},${(sale.totalRevenue/sale.sheetsSold).toFixed(2)},${productionCost}\n`;
-    });
-    
-    // Add petrol expenses
-    csv += '\nDate,Petrol Expense (₹),Description\n';
-    expenses.forEach(expense => {
-      csv += `${new Date(expense.date).toLocaleDateString()},${expense.amount},${expense.description}\n`;
-    });
-    
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename=scrubber-report-${period}.csv`);
-    res.send(csv);
   } catch (err) {
     console.error(err);
     res.status(500).json({ 
