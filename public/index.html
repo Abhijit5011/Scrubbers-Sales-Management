@@ -1,18 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Simple App</title>
+  <title>Scrubber Sales Tracker</title>
 </head>
 <body>
-  <h2>Submit Form</h2>
-  <form id="form">
-    <input name="name" placeholder="Name" required />
-    <input name="email" type="email" placeholder="Email" required />
-    <button type="submit">Submit</button>
+  <h2>Enter Daily Sale</h2>
+  <form id="sale-form">
+    <input type="number" name="sheetsSold" placeholder="Sheets Sold" required>
+    <input type="number" name="sellingPrice" placeholder="Selling Price per Sheet" required>
+    <button type="submit">Save Sale</button>
   </form>
 
-  <h2>Submitted Data</h2>
-  <ul id="data-list"></ul>
+  <h2>Enter Expense</h2>
+  <form id="expense-form">
+    <input name="type" placeholder="Expense Type" required>
+    <input type="number" name="amount" placeholder="Amount" required>
+    <button type="submit">Save Expense</button>
+  </form>
+
+  <h2>View Report</h2>
+  <button onclick="window.location.href='report.html'">Go to Report</button>
 
   <script src="script.js"></script>
 </body>
