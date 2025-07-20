@@ -1,1102 +1,1126 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScrubberPro | Business Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --primary: #4361ee;
-      --primary-light: #4cc9f0;
-      --secondary: #3a0ca3;
-      --success: #4cc9f0;
-      --danger: #f72585;
-      --warning: #f8961e;
-      --dark: #1a1a2e;
-      --light: #f8f9fa;
-      --gray: #6c757d;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #f8fafc;
-      color: #333;
-      line-height: 1.6;
-    }
-    
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    header {
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      padding: 25px 40px;
-      margin-bottom: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(67, 97, 238, 0.3);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    
-    .logo i {
-      font-size: 2rem;
-    }
-    
-    .logo-text h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
-    
-    .logo-text p {
-      font-size: 0.9rem;
-      opacity: 0.9;
-    }
-    
-    .current-date {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 10px 20px;
-      border-radius: 50px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 25px;
-      margin-bottom: 30px;
-    }
-    
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 25px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .card::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: var(--primary);
-    }
-    
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    }
-    
-    .card.profit::after {
-      background: var(--success);
-    }
-    
-    .card.expense::after {
-      background: var(--danger);
-    }
-    
-    .card.production::after {
-      background: var(--warning);
-    }
-    
-    .card h3 {
-      font-size: 1rem;
-      color: var(--dark);
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .card h3 i {
-      font-size: 1.2rem;
-    }
-    
-    .card .value {
-      font-size: 2.2rem;
-      font-weight: 700;
-      margin: 10px 0;
-    }
-    
-    .card .subtext {
-      font-size: 0.9rem;
-      color: var(--gray);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .card.profit .value {
-      color: var(--success);
-    }
-    
-    .card.expense .value {
-      color: var(--danger);
-    }
-    
-    .card.production .value {
-      color: var(--warning);
-    }
-    
-    .tabs-container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      margin-bottom: 30px;
-      overflow: hidden;
-    }
-    
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .tab {
-      padding: 15px 25px;
-      cursor: pointer;
-      font-weight: 500;
-      color: var(--gray);
-      transition: all 0.3s;
-      position: relative;
-      text-align: center;
-      flex: 1;
-    }
-    
-    .tab.active {
-      color: var(--primary);
-    }
-    
-    .tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: var(--primary);
-    }
-    
-    .tab:hover:not(.active) {
-      background: rgba(67, 97, 238, 0.05);
-    }
-    
-    .tab-content {
-      display: none;
-      padding: 30px;
-    }
-    
-    .tab-content.active {
-      display: block;
-      animation: fadeIn 0.5s ease;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .filter-section {
-      background: #f8fafc;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 30px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      align-items: flex-end;
-    }
-    
-    .form-group {
-      margin-bottom: 0;
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: var(--dark);
-      font-size: 0.9rem;
-    }
-    
-    input, select {
-      width: 100%;
-      padding: 12px 15px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      font-family: 'Poppins', sans-serif;
-      font-size: 0.95rem;
-      transition: all 0.3s;
-      background: white;
-    }
-    
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
-    }
-    
-    button {
-      padding: 12px 25px;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn {
-      font-size: 0.95rem;
-    }
-    
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
-    }
-    
-    .btn-primary:hover {
-      background: #3a56d4;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
-    }
-    
-    .btn-secondary {
-      background: white;
-      color: var(--primary);
-      border: 1px solid var(--primary);
-    }
-    
-    .btn-secondary:hover {
-      background: rgba(67, 97, 238, 0.05);
-    }
-    
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
-    
-    .btn-danger:hover {
-      background: #e5177b;
-    }
-    
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
-    
-    .btn-success:hover {
-      background: #3ab7d8;
-    }
-    
-    .btn-sm {
-      padding: 8px 15px;
-      font-size: 0.85rem;
-    }
-    
-    .btn-icon {
-      padding: 10px;
-      width: 40px;
-      height: 40px;
-      justify-content: center;
-    }
-    
-    .table-container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      overflow: hidden;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    th, td {
-      padding: 15px 20px;
-      text-align: left;
-      border-bottom: 1px solid #f1f5f9;
-    }
-    
-    th {
-      background: #f8fafc;
-      color: var(--dark);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.8rem;
-      letter-spacing: 0.5px;
-    }
-    
-    tr:hover {
-      background: #f8fafc;
-    }
-    
-    .badge {
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 50px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .badge-sale {
-      background: rgba(76, 201, 240, 0.1);
-      color: var(--success);
-    }
-    
-    .badge-expense {
-      background: rgba(247, 37, 133, 0.1);
-      color: var(--danger);
-    }
-    
-    .chart-container {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-    }
-    
-    .chart-title {
-      margin-bottom: 20px;
-      color: var(--dark);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .summary-card {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      margin-bottom: 30px;
-    }
-    
-    .summary-card h3 {
-      margin-bottom: 20px;
-      color: var(--dark);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .period-selector {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    
-    .period-btn {
-      padding: 8px 20px;
-      border-radius: 50px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 0.9rem;
-    }
-    
-    .period-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-    
-    .period-btn:hover:not(.active) {
-      background: #f8fafc;
-    }
-    
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .modal-content {
-      background: white;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      animation: modalFadeIn 0.3s ease;
-    }
-    
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .modal-body {
-      padding: 20px;
-    }
-    
-    .modal-footer {
-      padding: 20px;
-      border-top: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-    .alert {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  display: none;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScrubberPro | Business Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4cc9f0;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+        }
 
-.alert-content {
-  padding: 15px 20px;
-  border-radius: 8px;
-  color: white;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  animation: slideIn 0.3s ease-out;
-}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-.alert-success {
-  background-color: #4cc9f0;
-}
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+            color: #333;
+            line-height: 1.6;
+        }
 
-.alert-danger {
-  background-color: #f72585;
-}
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-    
-   
-  
-    
-    @media (max-width: 768px) {
-      header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-      }
-      
-      .dashboard {
-        grid-template-columns: 1fr;
-      }
-      
-      .tabs {
-        flex-direction: column;
-      }
-      
-      .tab {
-        border-bottom: 1px solid #eee;
-      }
-      
-      .tab.active::after {
-        display: none;
-      }
-      
-      .filter-section {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 40px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(67, 97, 238, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .current-date {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card.profit::after {
+            background: var(--success);
+        }
+
+        .card.expense::after {
+            background: var(--danger);
+        }
+
+        .card.production::after {
+            background: var(--warning);
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            color: var(--dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3 i {
+            font-size: 1.2rem;
+        }
+
+        .card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .card .subtext {
+            font-size: 0.9rem;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card.profit .value {
+            color: var(--success);
+        }
+
+        .card.expense .value {
+            color: var(--danger);
+        }
+
+        .card.production .value {
+            color: var(--warning);
+        }
+
+        .tabs-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--gray);
+            transition: all 0.3s;
+            position: relative;
+            text-align: center;
+            flex: 1;
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(67, 97, 238, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .filter-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #3a56d4;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(67, 97, 238, 0.05);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e5177b;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #3ab7d8;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+
+        .btn-icon {
+            padding: 10px;
+            width: 40px;
+            height: 40px;
+            justify-content: center;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th,
+        td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--dark);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-sale {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+
+        .badge-expense {
+            background: rgba(247, 37, 133, 0.1);
+            color: var(--danger);
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .summary-card h3 {
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .period-btn {
+            padding: 8px 20px;
+            border-radius: 50px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .period-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .period-btn:hover:not(.active) {
+            background: #f8fafc;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .alert-content {
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert-success {
+            background-color: #4cc9f0;
+        }
+
+        .alert-danger {
+            background-color: #f72585;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+
+
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                border-bottom: 1px solid #eee;
+            }
+
+            .tab.active::after {
+                display: none;
+            }
+
+            .filter-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container">
-    <header>
-      <div class="logo">
-        <i class="fas fa-scrubber"></i>
-        <div class="logo-text">
-          <h1>ScrubberPro</h1>
-          <p>Stainless Steel Scrubber Business Management</p>
-        </div>
-      </div>
-      <div class="current-date">
-        <i class="fas fa-calendar-alt"></i>
-        <span id="current-date"></span>
-      </div>
-    </header>
-    
-    <div class="dashboard">
-      <div class="card">
-        <h3><i class="fas fa-chart-line"></i> Total Sales</h3>
-        <div class="value" id="totalSales">₹0</div>
-        <div class="subtext"><i class="fas fa-boxes"></i> <span id="totalSheets">0</span> sheets sold</div>
-      </div>
-      
-      <div class="card production">
-        <h3><i class="fas fa-industry"></i> Production Cost</h3>
-        <div class="value">₹<span id="totalProductionCost">0</span></div>
-        <div class="subtext"><i class="fas fa-cubes"></i> @ ₹47 per sheet</div>
-      </div>
-      
-      <div class="card profit">
-        <h3><i class="fas fa-hand-holding-usd"></i> Net Profit</h3>
-        <div class="value">₹<span id="netProfit">0</span></div>
-        <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
-      </div>
-      
-      <div class="card expense">
-        <h3><i class="fas fa-gas-pump"></i> Petrol Expense</h3>
-        <div class="value">₹<span id="totalPetrol">0</span></div>
-        <div class="subtext"><i class="fas fa-truck"></i> Monthly costs</div>
-      </div>
-    </div>
-    
-    <div class="tabs-container">
-      <div class="tabs">
-         <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
-        <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
-        <div class="tab active" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
-        <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
-      </div>
-      
-      <div id="alert" class="alert" style="display: none;"></div>
-      
-      <!-- Transactions Tab -->
-      <div class="tab-content active" id="transactions-tab">
-         <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        <div class="filter-section">
-          <div class="form-group">
-            <label for="startDate"><i class="far fa-calendar"></i> From Date</label>
-            <input type="date" id="startDate">
-          </div>
-          
-          <div class="form-group">
-            <label for="endDate"><i class="far fa-calendar"></i> To Date</label>
-            <input type="date" id="endDate">
-          </div>
-          
-          <div class="form-group">
-            <label for="transactionType"><i class="fas fa-filter"></i> Type</label>
-            <select id="transactionType">
-              <option value="all">All Transactions</option>
-              <option value="sales">Sales Only</option>
-              <option value="expenses">Expenses Only</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <button id="filterBtn" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filters</button>
-            <button id="resetFilters" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</button>
-          </div>
-        </div>
-        
-        <div class="table-container">
-          <table id="transactionsTable">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Details</th>
-                <th>Amount</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Transactions will be loaded here -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <!-- Sales Entry Tab -->
-      <div class="tab-content" id="sales-tab">
-         <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        <form id="salesForm">
-          <div class="form-group">
-            <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
-            <input type="date" id="saleDate" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="sheetsSold"><i class="fas fa-layer-group"></i> Sheets Sold</label>
-            <input type="number" id="sheetsSold" min="1" placeholder="Number of sheets" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue (₹)</label>
-            <input type="number" id="totalRevenue" min="60" placeholder="Total amount received" required>
-          </div>
-          
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Sale</button>
-        </form>
-      </div>
-      
-      <!-- Expenses Tab -->
-      <div class="tab-content" id="expenses-tab">
-         <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        <form id="expenseForm">
-          <div class="form-group">
-            <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
-            <input type="date" id="expenseDate" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="expenseType"><i class="fas fa-tags"></i> Type</label>
-            <select id="expenseType" required>
-              <option value="petrol">Petrol</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="expenseAmount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
-            <input type="number" id="expenseAmount" min="0" placeholder="Amount spent" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="expenseDescription"><i class="fas fa-align-left"></i> Description</label>
-            <input type="text" id="expenseDescription" placeholder="What was this expense for?">
-          </div>
-          
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Expense</button>
-        </form>
-      </div>
-      
-      <!-- Reports Tab -->
-      <div class="tab-content" id="reports-tab">
-        <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        
-        <div class="report-actions no-print">
-          <button id="printReport" class="btn btn-success"><i class="fas fa-print"></i> Print Report</button>
-        </div>
-        
-        <div id="print-container">
-          <div class="print-only" style="margin-bottom: 30px; text-align: center;">
-            <h2>ScrubberPro Business Report</h2>
-            <p id="report-period-text">Period: Today</p>
-            <p id="report-date">Generated on: <span id="current-report-date"></span></p>
-          </div>
-          
-          <div class="chart-container">
-            <h3 class="chart-title"><i class="fas fa-chart-line"></i> Sales Performance</h3>
-            <canvas id="salesChart"></canvas>
-          </div>
-          
-          <div class="chart-container">
-            <h3 class="chart-title"><i class="fas fa-money-bill-wave"></i> Profit Analysis</h3>
-            <canvas id="profitChart"></canvas>
-          </div>
-          
-          <div class="summary-card">
-            <h3><i class="fas fa-file-alt"></i> Financial Summary</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Total Sheets Sold</td>
-                  <td id="report-sheets">0</td>
-                </tr>
-                <tr>
-                  <td>Total Revenue</td>
-                  <td id="report-revenue">₹0</td>
-                </tr>
-                <tr>
-                  <td>Production Cost (@₹47/sheet)</td>
-                  <td id="report-production">₹0</td>
-                </tr>
-                <tr>
-                  <td>Petrol Expense</td>
-                  <td id="report-petrol">₹0</td>
-                </tr>
-                <tr>
-                  <td>Other Expenses</td>
-                  <td id="report-other-expenses">₹0</td>
-                </tr>
-                <tr>
-                  <td>Net Profit</td>
-                  <td id="report-profit">₹0</td>
-                </tr>
-                <tr>
-                  <td>Profit Margin</td>
-                  <td id="report-margin">0%</td>
-                </tr>
-                <tr>
-                  <td>Average Price per Sheet</td>
-                  <td id="report-avg-price">₹0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-scrubber"></i>
+                <div class="logo-text">
+                    <h1>ScrubberPro</h1>
+                    <p>Stainless Steel Scrubber Business Management</p>
+                </div>
+            </div>
+            <div class="current-date">
+                <i class="fas fa-calendar-alt"></i>
+                <span id="current-date"></span>
+            </div>
+        </header>
 
-  <!-- Edit Sale Modal -->
-  <div id="editSaleModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Sale Record</h3>
-        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="editSaleForm">
-          <input type="hidden" id="editSaleId">
-          <div class="form-group">
-            <label for="editSaleDate">Date</label>
-            <input type="date" id="editSaleDate" required>
-          </div>
-          <div class="form-group">
-            <label for="editSheetsSold">Sheets Sold</label>
-            <input type="number" id="editSheetsSold" min="1" required>
-          </div>
-          <div class="form-group">
-            <label for="editTotalRevenue">Total Revenue (₹)</label>
-            <input type="number" id="editTotalRevenue" min="60" required>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary close-modal">Cancel</button>
-        <button id="updateSaleBtn" class="btn btn-primary">Update Sale</button>
-      </div>
-    </div>
-  </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3><i class="fas fa-chart-line"></i> Total Sales</h3>
+                <div class="value" id="totalSales">₹0</div>
+                <div class="subtext"><i class="fas fa-boxes"></i> <span id="totalSheets">0</span> sheets sold</div>
+            </div>
 
-  <!-- Edit Expense Modal -->
-  <div id="editExpenseModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Expense Record</h3>
-        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="editExpenseForm">
-          <input type="hidden" id="editExpenseId">
-          <div class="form-group">
-            <label for="editExpenseDate">Date</label>
-            <input type="date" id="editExpenseDate" required>
-          </div>
-          <div class="form-group">
-            <label for="editExpenseType">Type</label>
-            <select id="editExpenseType" required>
-              <option value="petrol">Petrol</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="editExpenseAmount">Amount (₹)</label>
-            <input type="number" id="editExpenseAmount" min="0" required>
-          </div>
-          <div class="form-group">
-            <label for="editExpenseDescription">Description</label>
-            <input type="text" id="editExpenseDescription">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary close-modal">Cancel</button>
-        <button id="updateExpenseBtn" class="btn btn-primary">Update Expense</button>
-      </div>
-    </div>
-  </div>
+            <div class="card production">
+                <h3><i class="fas fa-industry"></i> Production Cost</h3>
+                <div class="value">₹<span id="totalProductionCost">0</span></div>
+                <div class="subtext"><i class="fas fa-cubes"></i> @ ₹47 per sheet</div>
+            </div>
 
-  <!-- Delete Confirmation Modal -->
-  <div id="deleteModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Confirm Deletion</h3>
-        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to delete this record? This action cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary close-modal">Cancel</button>
-        <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
-      </div>
-    </div>
-  </div>
+            <div class="card profit">
+                <h3><i class="fas fa-hand-holding-usd"></i> Net Profit</h3>
+                <div class="value">₹<span id="netProfit">0</span></div>
+                <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
+            </div>
 
-  <script>
-    // DOM Elements
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const periodBtns = document.querySelectorAll('.period-btn');
-    const alertBox = document.getElementById('alert');
-    const salesForm = document.getElementById('salesForm');
-    const expenseForm = document.getElementById('expenseForm');
-    const todayDate = new Date().toISOString().split('T')[0];
-    let currentPeriod = 'today';
-    let salesChart = null;
-    let profitChart = null;
-    let currentDeleteId = null;
-    let currentDeleteType = null;
-    
-    // Set current date
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-    
-    // Set today's date as default
-    document.getElementById('saleDate').value = todayDate;
-    document.getElementById('expenseDate').value = todayDate;
-    
-    // Initialize modals
-    const modals = document.querySelectorAll('.modal');
-    const closeModalBtns = document.querySelectorAll('.close-modal');
-    
-    closeModalBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modals.forEach(modal => modal.style.display = 'none');
-      });
-    });
-    
-    window.addEventListener('click', (e) => {
-      if (e.target.classList.contains('modal')) {
-        modals.forEach(modal => modal.style.display = 'none');
-      }
-    });
-    
-    // Tab switching
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        
-        tab.classList.add('active');
-        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-      });
-    });
-    
-    // Period switching
-    periodBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        periodBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentPeriod = btn.dataset.period;
-        updateDashboard();
-        updateReportPeriodText();
-      });
-    });
-    
-    // Update report period text
-    function updateReportPeriodText() {
-      const periodTexts = {
-        'today': 'Today',
-        'week': 'This Week',
-        'month': 'This Month',
-        'year': 'This Year',
-        'all': 'All Time'
-      };
-      document.getElementById('report-period-text').textContent = `Period: ${periodTexts[currentPeriod]}`;
-    }
-    
-    // Print report
-    document.getElementById('printReport').addEventListener('click', () => {
-      document.getElementById('current-report-date').textContent = new Date().toLocaleDateString();
-      window.print();
-    });
-    
-    // Sales Form Submission
-    salesForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const formData = {
-        date: this.saleDate.value,
-        sheetsSold: parseInt(this.sheetsSold.value),
-        totalRevenue: parseInt(this.totalRevenue.value)
-      };
-      
-      try {
-        const response = await fetch('/api/sales', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Sales entry saved successfully!', 'success');
-          this.reset();
-          this.saleDate.value = todayDate;
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error saving data. Please try again.', 'danger');
-      }
-    });
-    
-    // Expense Form Submission
-    expenseForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const formData = {
-        date: this.expenseDate.value,
-        type: this.expenseType.value,
-        amount: parseInt(this.expenseAmount.value),
-        description: this.expenseDescription.value || `${this.expenseType.value} expense`
-      };
-      
-      try {
-        const response = await fetch('/api/expenses', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Expense saved successfully!', 'success');
-          this.reset();
-          this.expenseDate.value = todayDate;
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error saving expense. Please try again.', 'danger');
-      }
-    });
-    
-    // Filter Transactions
-    document.getElementById('filterBtn').addEventListener('click', loadTransactions);
-    document.getElementById('resetFilters').addEventListener('click', () => {
-      document.getElementById('startDate').value = '';
-      document.getElementById('endDate').value = '';
-      document.getElementById('transactionType').value = 'all';
-      loadTransactions();
-    });
-    
-    // Load transactions
-    async function loadTransactions() {
-      try {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const type = document.getElementById('transactionType').value;
-        
-        let url = '/api/transactions?';
-        if (startDate && endDate) url += `startDate=${startDate}&endDate=${endDate}&`;
-        url += `type=${type}`;
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (result.success) {
-          const tbody = document.querySelector('#transactionsTable tbody');
-          tbody.innerHTML = '';
-          
-          // Process sales
-          if (result.data.sales) {
-            result.data.sales.forEach(sale => {
-              const row = document.createElement('tr');
-              row.innerHTML = `
+            <div class="card expense">
+                <h3><i class="fas fa-gas-pump"></i> Petrol Expense</h3>
+                <div class="value">₹<span id="totalPetrol">0</span></div>
+                <div class="subtext"><i class="fas fa-truck"></i> Monthly costs</div>
+            </div>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
+                <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
+                <div class="tab active" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
+                <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
+            </div>
+
+            <div id="alert" class="alert" style="display: none;"></div>
+
+            <!-- Transactions Tab -->
+            <div class="tab-content active" id="transactions-tab">
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="today">Today</button>
+                    <button class="period-btn" data-period="week">This Week</button>
+                    <button class="period-btn" data-period="month">This Month</button>
+                    <button class="period-btn" data-period="year">This Year</button>
+                    <button class="period-btn" data-period="all">All Time</button>
+                </div>
+                <div class="filter-section">
+                    <div class="form-group">
+                        <label for="startDate"><i class="far fa-calendar"></i> From Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate"><i class="far fa-calendar"></i> To Date</label>
+                        <input type="date" id="endDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transactionType"><i class="fas fa-filter"></i> Type</label>
+                        <select id="transactionType">
+                            <option value="all">All Transactions</option>
+                            <option value="sales">Sales Only</option>
+                            <option value="expenses">Expenses Only</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <button id="filterBtn" class="btn btn-primary"><i class="fas fa-filter"></i> Apply
+                            Filters</button>
+                        <button id="resetFilters" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales Entry Tab -->
+            <div class="tab-content" id="sales-tab">
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="today">Today</button>
+                    <button class="period-btn" data-period="week">This Week</button>
+                    <button class="period-btn" data-period="month">This Month</button>
+                    <button class="period-btn" data-period="year">This Year</button>
+                    <button class="period-btn" data-period="all">All Time</button>
+                </div>
+                <form id="salesForm">
+                    <div class="form-group">
+                        <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
+                        <input type="date" id="saleDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sheetsSold"><i class="fas fa-layer-group"></i> Sheets Sold</label>
+                        <input type="number" id="sheetsSold" min="1" placeholder="Number of sheets" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue (₹)</label>
+                        <input type="number" id="totalRevenue" min="60" placeholder="Total amount received" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Sale</button>
+                </form>
+            </div>
+
+            <!-- Expenses Tab -->
+            <div class="tab-content" id="expenses-tab">
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="today">Today</button>
+                    <button class="period-btn" data-period="week">This Week</button>
+                    <button class="period-btn" data-period="month">This Month</button>
+                    <button class="period-btn" data-period="year">This Year</button>
+                    <button class="period-btn" data-period="all">All Time</button>
+                </div>
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseType"><i class="fas fa-tags"></i> Type</label>
+                        <select id="expenseType" required>
+                            <option value="petrol">Petrol</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseAmount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
+                        <input type="number" id="expenseAmount" min="0" placeholder="Amount spent" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseDescription"><i class="fas fa-align-left"></i> Description</label>
+                        <input type="text" id="expenseDescription" placeholder="What was this expense for?">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Expense</button>
+                </form>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-content" id="reports-tab">
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="today">Today</button>
+                    <button class="period-btn" data-period="week">This Week</button>
+                    <button class="period-btn" data-period="month">This Month</button>
+                    <button class="period-btn" data-period="year">This Year</button>
+                    <button class="period-btn" data-period="all">All Time</button>
+                </div>
+
+                <div class="report-actions no-print">
+                    <button id="printReport" class="btn btn-success"><i class="fas fa-print"></i> Print Report</button>
+                </div>
+
+                <div id="print-container">
+                    <div class="print-only" style="margin-bottom: 30px; text-align: center;">
+                        <h2>ScrubberPro Business Report</h2>
+
+                        <div class="summary-card">
+                            <h3><i class="fas fa-file-alt"></i> Financial Summary</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Metric</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Total Sheets Sold</td>
+                                        <td id="report-sheets">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Revenue</td>
+                                        <td id="report-revenue">₹0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Production Cost (@₹47/sheet)</td>
+                                        <td id="report-production">₹0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Petrol Expense</td>
+                                        <td id="report-petrol">₹0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Expenses</td>
+                                        <td id="report-other-expenses">₹0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Net Profit</td>
+                                        <td id="report-profit">₹0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Profit Margin</td>
+                                        <td id="report-margin">0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Average Price per Sheet</td>
+                                        <td id="report-avg-price">₹0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Sale Modal -->
+        <div id="editSaleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Sale Record</h3>
+                    <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editSaleForm">
+                        <input type="hidden" id="editSaleId">
+                        <div class="form-group">
+                            <label for="editSaleDate">Date</label>
+                            <input type="date" id="editSaleDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editSheetsSold">Sheets Sold</label>
+                            <input type="number" id="editSheetsSold" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTotalRevenue">Total Revenue (₹)</label>
+                            <input type="number" id="editTotalRevenue" min="60" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary close-modal">Cancel</button>
+                    <button id="updateSaleBtn" class="btn btn-primary">Update Sale</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Expense Modal -->
+        <div id="editExpenseModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Expense Record</h3>
+                    <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editExpenseForm">
+                        <input type="hidden" id="editExpenseId">
+                        <div class="form-group">
+                            <label for="editExpenseDate">Date</label>
+                            <input type="date" id="editExpenseDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExpenseType">Type</label>
+                            <select id="editExpenseType" required>
+                                <option value="petrol">Petrol</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExpenseAmount">Amount (₹)</label>
+                            <input type="number" id="editExpenseAmount" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExpenseDescription">Description</label>
+                            <input type="text" id="editExpenseDescription">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary close-modal">Cancel</button>
+                    <button id="updateExpenseBtn" class="btn btn-primary">Update Expense</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Confirm Deletion</h3>
+                    <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this record? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary close-modal">Cancel</button>
+                    <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // DOM Elements
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const periodBtns = document.querySelectorAll('.period-btn');
+            const alertBox = document.getElementById('alert');
+            const salesForm = document.getElementById('salesForm');
+            const expenseForm = document.getElementById('expenseForm');
+            const todayDate = new Date().toISOString().split('T')[0];
+            let currentPeriod = 'today';
+            let salesChart = null;
+            let profitChart = null;
+            let currentDeleteId = null;
+            let currentDeleteType = null;
+
+            // Set current date
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Set today's date as default
+            document.getElementById('saleDate').value = todayDate;
+            document.getElementById('expenseDate').value = todayDate;
+
+            // Initialize modals
+            const modals = document.querySelectorAll('.modal');
+            const closeModalBtns = document.querySelectorAll('.close-modal');
+
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modals.forEach(modal => modal.style.display = 'none');
+                });
+            });
+
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    modals.forEach(modal => modal.style.display = 'none');
+                }
+            });
+
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+
+            // Period switching
+            periodBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    periodBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPeriod = btn.dataset.period;
+                    updateDashboard();
+                    updateReportPeriodText();
+                });
+            });
+
+            // Update report period text
+            function updateReportPeriodText() {
+                const periodTexts = {
+                    'today': 'Today',
+                    'week': 'This Week',
+                    'month': 'This Month',
+                    'year': 'This Year',
+                    'all': 'All Time'
+                };
+                document.getElementById('report-period-text').textContent = `Period: ${periodTexts[currentPeriod]}`;
+            }
+
+            // Print report
+            document.getElementById('printReport').addEventListener('click', () => {
+                document.getElementById('current-report-date').textContent = new Date().toLocaleDateString();
+                window.print();
+            });
+
+            // Sales Form Submission
+            salesForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const formData = {
+                    date: this.saleDate.value,
+                    sheetsSold: parseInt(this.sheetsSold.value),
+                    totalRevenue: parseInt(this.totalRevenue.value)
+                };
+
+                try {
+                    const response = await fetch('/api/sales', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Sales entry saved successfully!', 'success');
+                        this.reset();
+                        this.saleDate.value = todayDate;
+                        updateDashboard();
+                        loadTransactions();
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error saving data. Please try again.', 'danger');
+                }
+            });
+
+            // Expense Form Submission
+            expenseForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const formData = {
+                    date: this.expenseDate.value,
+                    type: this.expenseType.value,
+                    amount: parseInt(this.expenseAmount.value),
+                    description: this.expenseDescription.value || `${this.expenseType.value} expense`
+                };
+
+                try {
+                    const response = await fetch('/api/expenses', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Expense saved successfully!', 'success');
+                        this.reset();
+                        this.expenseDate.value = todayDate;
+                        updateDashboard();
+                        loadTransactions();
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error saving expense. Please try again.', 'danger');
+                }
+            });
+
+            // Filter Transactions
+            document.getElementById('filterBtn').addEventListener('click', loadTransactions);
+            document.getElementById('resetFilters').addEventListener('click', () => {
+                document.getElementById('startDate').value = '';
+                document.getElementById('endDate').value = '';
+                document.getElementById('transactionType').value = 'all';
+                loadTransactions();
+            });
+
+            // Load transactions
+            async function loadTransactions() {
+                try {
+                    const startDate = document.getElementById('startDate').value;
+                    const endDate = document.getElementById('endDate').value;
+                    const type = document.getElementById('transactionType').value;
+
+                    let url = '/api/transactions?';
+                    if (startDate && endDate) url += `startDate=${startDate}&endDate=${endDate}&`;
+                    url += `type=${type}`;
+
+                    const response = await fetch(url);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const tbody = document.querySelector('#transactionsTable tbody');
+                        tbody.innerHTML = '';
+
+                        // Process sales
+                        if (result.data.sales) {
+                            result.data.sales.forEach(sale => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
                 <td>${new Date(sale.date).toLocaleDateString()}</td>
                 <td><span class="badge badge-sale">Sale</span></td>
-                <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue/sale.sheetsSold).toFixed(2)}</td>
+                <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue / sale.sheetsSold).toFixed(2)}</td>
                 <td>₹${sale.totalRevenue}</td>
                 <td>
                   
                   <button class="btn btn-sm btn-danger delete-sale" data-id="${sale._id}"><i class="fas fa-trash"></i></button>
                 </td>
               `;
-              tbody.appendChild(row);
-            });
-          }
-          
-          // Process expenses
-          if (result.data.expenses) {
-            result.data.expenses.forEach(expense => {
-              const row = document.createElement('tr');
-              row.innerHTML = `
+                                tbody.appendChild(row);
+                            });
+                        }
+
+                        // Process expenses
+                        if (result.data.expenses) {
+                            result.data.expenses.forEach(expense => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
                 <td>${new Date(expense.date).toLocaleDateString()}</td>
                 <td><span class="badge badge-expense">Expense</span></td>
                 <td>${expense.description}</td>
@@ -1106,305 +1130,209 @@
                   <button class="btn btn-sm btn-danger delete-expense" data-id="${expense._id}"><i class="fas fa-trash"></i></button>
                 </td>
               `;
-              tbody.appendChild(row);
-            });
-          }
-          
-          // Add event listeners to edit and delete buttons
-          
-          
-          document.querySelectorAll('.delete-sale').forEach(btn => {
-            btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'sale'));
-          });
-          
-          
-          document.querySelectorAll('.delete-expense').forEach(btn => {
-            btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'expense'));
-          });
-          
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading transactions. Please try again.', 'danger');
-      }
-    }
-    
-    
-   
-    
-    // Update Sale
-    document.getElementById('updateSaleBtn').addEventListener('click', async function() {
-      const form = document.getElementById('editSaleForm');
-      const id = form.editSaleId.value;
-      
-      const formData = {
-        date: form.editSaleDate.value,
-        sheetsSold: parseInt(form.editSheetsSold.value),
-        totalRevenue: parseInt(form.editTotalRevenue.value)
-      };
-      
-      try {
-        const response = await fetch(`/api/sales/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Sale updated successfully!', 'success');
-          document.getElementById('editSaleModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error updating sale. Please try again.', 'danger');
-      }
-    });
-    
-    // Update Expense
-    document.getElementById('updateExpenseBtn').addEventListener('click', async function() {
-      const form = document.getElementById('editExpenseForm');
-      const id = form.editExpenseId.value;
-      
-      const formData = {
-        date: form.editExpenseDate.value,
-        type: form.editExpenseType.value,
-        amount: parseInt(form.editExpenseAmount.value),
-        description: form.editExpenseDescription.value
-      };
-      
-      try {
-        const response = await fetch(`/api/expenses/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Expense updated successfully!', 'success');
-          document.getElementById('editExpenseModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error updating expense. Please try again.', 'danger');
-      }
-    });
-    
-    // Confirm Delete
-    function confirmDelete(id, type) {
-      currentDeleteId = id;
-      currentDeleteType = type;
-      document.getElementById('deleteModal').style.display = 'flex';
-    }
-    
-    // Delete Record
-    document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-      if (!currentDeleteId || !currentDeleteType) return;
-      
-      try {
-        const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
-        const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
-          method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Record deleted successfully!', 'success');
-          document.getElementById('deleteModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error deleting record. Please try again.', 'danger');
-      }
-      
-      currentDeleteId = null;
-      currentDeleteType = null;
-    });
-    
-    // Update Dashboard
-    async function updateDashboard() {
-      try {
-        let url = '/api/summary';
-        if (currentPeriod !== 'all') {
-          url += `?period=${currentPeriod}`;
-        }
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (result.success) {
-          const data = result.data;
-          
-          // Update summary cards
-          document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
-          document.getElementById('totalSheets').textContent = data.totalSheets || 0;
-          document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
-          document.getElementById('totalPetrol').textContent = data.totalPetrol || 0;
-          document.getElementById('netProfit').textContent = data.netProfit || 0;
-          document.getElementById('profitMargin').textContent = data.profitMargin || 0;
-          
-          // Update report summary
-          document.getElementById('report-sheets').textContent = data.totalSheets || 0;
-          document.getElementById('report-revenue').textContent = `₹${data.totalRevenue || 0}`;
-          document.getElementById('report-production').textContent = `₹${data.totalProductionCost || 0}`;
-          document.getElementById('report-petrol').textContent = `₹${data.totalPetrol || 0}`;
-          document.getElementById('report-other-expenses').textContent = `₹${data.totalOtherExpenses || 0}`;
-          document.getElementById('report-profit').textContent = `₹${data.netProfit || 0}`;
-          document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin}%` : '0%';
-          document.getElementById('report-avg-price').textContent = data.avgPricePerSheet ? `₹${data.avgPricePerSheet.toFixed(2)}` : '₹0';
-          
-          // Update charts
-          updateCharts(data.chartData);
-        } else {
-          showAlert(`Error: ${result.message}`, 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading dashboard data. Please try again.', 'danger');
-      }
-    }
-    
-    // Update Charts
-    function updateCharts(chartData) {
-      if (!chartData || chartData.length === 0) {
-        // Handle case when there's no data
-        if (salesChart) salesChart.destroy();
-        if (profitChart) profitChart.destroy();
-        
-        document.getElementById('salesChart').innerHTML = '<p>No sales data available for the selected period</p>';
-        document.getElementById('profitChart').innerHTML = '<p>No profit data available for the selected period</p>';
-        return;
-      }
-      
-      // Prepare labels and data
-      const labels = chartData.map(item => item.period);
-      const sheetsSoldData = chartData.map(item => item.sheetsSold);
-      const revenueData = chartData.map(item => item.revenue);
-      const productionCostData = chartData.map(item => item.productionCost);
-      const profitData = chartData.map(item => item.profit);
-      
-      // Sales Chart
-      const salesCtx = document.getElementById('salesChart').getContext('2d');
-      
-      if (salesChart) {
-        salesChart.destroy();
-      }
-      
-     // In the updateCharts function:
-// Sales Chart (Line only)
-salesChart = new Chart(salesCtx, {
-  type: 'line',
-  data: {
-    labels: labels,
-    datasets: [{
-      label: 'Sheets Sold',
-      data: sheetsSoldData,
-      backgroundColor: 'rgba(76, 201, 240, 0.2)',
-      borderColor: 'rgba(76, 201, 240, 1)',
-      borderWidth: 2,
-      tension: 0.4,
-      fill: true
-    }]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Sheets Sold'
-        }
-      }
-    }
-  }
-});
+                                tbody.appendChild(row);
+                            });
+                        }
 
-// Profit Chart (Stacked bar)
-profitChart = new Chart(profitCtx, {
-  type: 'bar',
-  data: {
-    labels: labels,
-    datasets: [
-      {
-        label: 'Revenue',
-        data: revenueData,
-        backgroundColor: 'rgba(67, 97, 238, 0.7)'
-      },
-      {
-        label: 'Cost',
-        data: productionCostData,
-        backgroundColor: 'rgba(248, 150, 30, 0.7)'
-      },
-      {
-        label: 'Profit',
-        data: profitData,
-        backgroundColor: 'rgba(76, 201, 240, 0.7)'
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true,
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Amount (₹)'
-        }
-      }
+                        // Add event listeners to edit and delete buttons
+
+
+                        document.querySelectorAll('.delete-sale').forEach(btn => {
+                            btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'sale'));
+                        });
+
+
+                        document.querySelectorAll('.delete-expense').forEach(btn => {
+                            btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'expense'));
+                        });
+
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error loading transactions. Please try again.', 'danger');
+                }
+            }
+
+
+
+
+            // Update Sale
+            document.getElementById('updateSaleBtn').addEventListener('click', async function () {
+                const form = document.getElementById('editSaleForm');
+                const id = form.editSaleId.value;
+
+                const formData = {
+                    date: form.editSaleDate.value,
+                    sheetsSold: parseInt(form.editSheetsSold.value),
+                    totalRevenue: parseInt(form.editTotalRevenue.value)
+                };
+
+                try {
+                    const response = await fetch(`/api/sales/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Sale updated successfully!', 'success');
+                        document.getElementById('editSaleModal').style.display = 'none';
+                        updateDashboard();
+                        loadTransactions();
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error updating sale. Please try again.', 'danger');
+                }
+            });
+
+            // Update Expense
+            document.getElementById('updateExpenseBtn').addEventListener('click', async function () {
+                const form = document.getElementById('editExpenseForm');
+                const id = form.editExpenseId.value;
+
+                const formData = {
+                    date: form.editExpenseDate.value,
+                    type: form.editExpenseType.value,
+                    amount: parseInt(form.editExpenseAmount.value),
+                    description: form.editExpenseDescription.value
+                };
+
+                try {
+                    const response = await fetch(`/api/expenses/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Expense updated successfully!', 'success');
+                        document.getElementById('editExpenseModal').style.display = 'none';
+                        updateDashboard();
+                        loadTransactions();
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error updating expense. Please try again.', 'danger');
+                }
+            });
+
+            // Confirm Delete
+            function confirmDelete(id, type) {
+                currentDeleteId = id;
+                currentDeleteType = type;
+                document.getElementById('deleteModal').style.display = 'flex';
+            }
+
+            // Delete Record
+            document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+                if (!currentDeleteId || !currentDeleteType) return;
+
+                try {
+                    const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
+                    const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('Record deleted successfully!', 'success');
+                        document.getElementById('deleteModal').style.display = 'none';
+                        updateDashboard();
+                        loadTransactions();
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error deleting record. Please try again.', 'danger');
+                }
+
+                currentDeleteId = null;
+                currentDeleteType = null;
+            });
+
+            // Update Dashboard
+            async function updateDashboard() {
+                try {
+                    let url = '/api/summary';
+                    if (currentPeriod !== 'all') {
+                        url += `?period=${currentPeriod}`;
+                    }
+
+                    const response = await fetch(url);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const data = result.data;
+
+                        // Update summary cards
+                        document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
+                        document.getElementById('totalSheets').textContent = data.totalSheets || 0;
+                        document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
+                        document.getElementById('totalPetrol').textContent = data.totalPetrol || 0;
+                        document.getElementById('netProfit').textContent = data.netProfit || 0;
+                        document.getElementById('profitMargin').textContent = data.profitMargin || 0;
+
+                        // Update report summary
+                        document.getElementById('report-sheets').textContent = data.totalSheets || 0;
+                        document.getElementById('report-revenue').textContent = `₹${data.totalRevenue || 0}`;
+                        document.getElementById('report-production').textContent = `₹${data.totalProductionCost || 0}`;
+                        document.getElementById('report-petrol').textContent = `₹${data.totalPetrol || 0}`;
+                        document.getElementById('report-other-expenses').textContent = `₹${data.totalOtherExpenses || 0}`;
+                        document.getElementById('report-profit').textContent = `₹${data.netProfit || 0}`;
+                        document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin}%` : '0%';
+                        document.getElementById('report-avg-price').textContent = data.avgPricePerSheet ? `₹${data.avgPricePerSheet.toFixed(2)}` : '₹0';
+
+                        // Update charts
+                        updateCharts(data.chartData);
+                    } else {
+                        showAlert(`Error: ${result.message}`, 'danger');
+                    }
+                } 
     }
-  }
-});
-    }
-    
-    // Show Alert
-    function showAlert(message, type) {
-  alertBox.innerHTML = `
+
+
+
+
+
+            // Show Alert
+            function showAlert(message, type) {
+                alertBox.innerHTML = `
     <div class="alert-content alert-${type}">
       <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
       ${message}
     </div>
   `;
-  alertBox.style.display = 'block';
-  
-  setTimeout(() => {
-    alertBox.style.display = 'none';
-  }, 3000);
-}
-    
-    // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', () => {
-      updateDashboard();
-      loadTransactions();
-      updateReportPeriodText();
-    });
-  </script>
+                alertBox.style.display = 'block';
+
+                setTimeout(() => {
+                    alertBox.style.display = 'none';
+                }, 3000);
+            }
+
+            // Initialize the dashboard
+            document.addEventListener('DOMContentLoaded', () => {
+                updateDashboard();
+                loadTransactions();
+                updateReportPeriodText();
+            });
+        </script>
 </body>
+
 </html>
