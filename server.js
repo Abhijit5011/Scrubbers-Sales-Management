@@ -38,10 +38,46 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Helper function to calculate date ranges
+function getDateRange(period) {
+  const now = new Date();
+  const range = { start: new Date(0), end: new Date() }; // Default to all time
+
+  switch (period) {
+    case 'today':
+      range.start = new Date(now.setHours(0, 0, 0, 0));
+      range.end = new Date(now.setHours(23, 59, 59, 999));
+      break;
+    case 'week':
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      range.start = new Date(startOfWeek.setHours(0, 0, 0, 0));
+      range.end = new Date();
+      break;
+    case 'month':
+      range.start = new Date(now.getFullYear(), now.getMonth(), 1);
+      range.end = new Date();
+      break;
+    case 'year':
+      range.start = new Date(now.getFullYear(), 0, 1);
+      range.end = new Date();
+      break;
+  }
+
+  return range;
+}
+
 // Routes
 app.post('/api/sales', async (req, res) => {
   try {
     const { date, sheetsSold, totalRevenue } = req.body;
+    
+    if (!sheetsSold || !totalRevenue) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Sheets sold and total revenue are required' 
+      });
+    }
+
     const pricePerSheet = totalRevenue / sheetsSold;
     
     const newSale = new Sale({
@@ -71,6 +107,14 @@ app.put('/api/sales/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { date, sheetsSold, totalRevenue } = req.body;
+    
+    if (!sheetsSold || !totalRevenue) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Sheets sold and total revenue are required' 
+      });
+    }
+
     const pricePerSheet = totalRevenue / sheetsSold;
     
     const updatedSale = await Sale.findByIdAndUpdate(id, {
@@ -133,6 +177,13 @@ app.post('/api/expenses', async (req, res) => {
   try {
     const { date, type, amount, description } = req.body;
     
+    if (!type || !amount) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Type and amount are required' 
+      });
+    }
+
     const newExpense = new Expense({
       date: date || new Date(),
       type,
@@ -161,6 +212,13 @@ app.put('/api/expenses/:id', async (req, res) => {
     const { id } = req.params;
     const { date, type, amount, description } = req.body;
     
+    if (!type || !amount) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Type and amount are required' 
+      });
+    }
+
     const updatedExpense = await Expense.findByIdAndUpdate(id, {
       date,
       type,
@@ -231,16 +289,17 @@ app.get('/api/transactions', async (req, res) => {
 
     if (type === 'sales') {
       const sales = await Sale.find(query).sort({ date: -1 });
-      return res.json({ success: true, data: sales });
+      return res.json({ success: true, data: { sales } });
     } else if (type === 'expenses') {
       const expenses = await Expense.find(query).sort({ date: -1 });
-      return res.json({ success: true, data: expenses });
+      return res.json({ success: true, data: { expenses } });
     } else {
       const sales = await Sale.find(query).sort({ date: -1 });
       const expenses = await Expense.find(query).sort({ date: -1 });
       return res.json({ success: true, data: { sales, expenses } });
     }
   } catch (err) {
+    console.error(err);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching transactions', 
@@ -249,43 +308,16 @@ app.get('/api/transactions', async (req, res) => {
   }
 });
 
-app.get('/api/reports/summary', async (req, res) => {
+app.get('/api/summary', async (req, res) => {
   try {
     const { period } = req.query;
-    let dateFilter = {};
-    const now = new Date();
+    const { start, end } = getDateRange(period);
+    
+    const dateFilter = period === 'all' ? {} : { 
+      date: { $gte: start, $lte: end } 
+    };
 
-    switch (period) {
-      case 'today':
-        dateFilter.date = { 
-          $gte: new Date(now.setHours(0, 0, 0, 0)),
-          $lte: new Date(now.setHours(23, 59, 59, 999))
-        };
-        break;
-      case 'week':
-        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-        dateFilter.date = {
-          $gte: new Date(startOfWeek.setHours(0, 0, 0, 0)),
-          $lte: new Date()
-        };
-        break;
-      case 'month':
-        dateFilter.date = {
-          $gte: new Date(now.getFullYear(), now.getMonth(), 1),
-          $lte: new Date()
-        };
-        break;
-      case 'year':
-        dateFilter.date = {
-          $gte: new Date(now.getFullYear(), 0, 1),
-          $lte: new Date()
-        };
-        break;
-      default:
-        // All time - no date filter
-    }
-
-    // Get sales data
+    // Get sales summary
     const salesSummary = await Sale.aggregate([
       { $match: dateFilter },
       {
@@ -299,120 +331,170 @@ app.get('/api/reports/summary', async (req, res) => {
       }
     ]);
 
-    // Get expenses data (petrol only)
-    const expensesSummary = await Expense.aggregate([
+    // Get petrol expenses
+    const petrolExpenses = await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
-          type: 'petrol'
+          type: 'petrol' 
         } 
       },
       {
         $group: {
           _id: null,
-          totalPetrolExpense: { $sum: "$amount" }
+          totalPetrol: { $sum: "$amount" }
         }
       }
     ]);
 
-    // Get chart data
+    // Get other expenses
+    const otherExpenses = await Expense.aggregate([
+      { 
+        $match: { 
+          ...dateFilter,
+          type: 'other' 
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalOtherExpenses: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    // Prepare chart data
     let chartData = [];
-    if (period === 'month') {
-      chartData = await Sale.aggregate([
+    if (period === 'month' || period === 'year') {
+      const groupBy = period === 'month' ? { $week: "$date" } : { $month: "$date" };
+      
+      const salesChartData = await Sale.aggregate([
         { $match: dateFilter },
         {
           $group: {
-            _id: { $week: "$date" },
+            _id: groupBy,
             sheetsSold: { $sum: "$sheetsSold" },
-            totalRevenue: { $sum: "$totalRevenue" },
-            totalProfit: { 
-              $sum: { 
-                $subtract: [
-                  "$totalRevenue",
-                  { $add: [
-                    { $multiply: ["$sheetsSold", 47] },
-                    { $sum: [] } // Placeholder for petrol expenses
-                  ]}
-                ]
-              }
-            }
+            revenue: { $sum: "$totalRevenue" },
+            productionCost: { $sum: { $multiply: ["$sheetsSold", 47] } }
           }
         },
         { $sort: { "_id": 1 } }
       ]);
-    } else if (period === 'year') {
-      chartData = await Sale.aggregate([
-        { $match: dateFilter },
+
+      const petrolChartData = await Expense.aggregate([
+        { 
+          $match: { 
+            ...dateFilter,
+            type: 'petrol' 
+          } 
+        },
         {
           $group: {
-            _id: { $month: "$date" },
-            sheetsSold: { $sum: "$sheetsSold" },
-            totalRevenue: { $sum: "$totalRevenue" },
-            totalProfit: { 
-              $sum: { 
-                $subtract: [
-                  "$totalRevenue",
-                  { $add: [
-                    { $multiply: ["$sheetsSold", 47] },
-                    { $sum: [] } // Placeholder for petrol expenses
-                  ]}
-                ]
-              }
-            }
+            _id: groupBy,
+            petrolExpense: { $sum: "$amount" }
           }
         },
         { $sort: { "_id": 1 } }
       ]);
+
+      // Merge chart data
+      chartData = salesChartData.map(sale => {
+        const petrol = petrolChartData.find(p => p._id === sale._id);
+        return {
+          period: sale._id,
+          sheetsSold: sale.sheetsSold,
+          revenue: sale.revenue,
+          productionCost: sale.productionCost,
+          petrolExpense: petrol ? petrol.petrolExpense : 0,
+          profit: sale.revenue - sale.productionCost - (petrol ? petrol.petrolExpense : 0)
+        };
+      });
     } else {
-      // For daily/weekly
-      chartData = await Sale.aggregate([
+      // Daily data
+      const salesChartData = await Sale.aggregate([
         { $match: dateFilter },
         {
           $group: {
-            _id: "$date",
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
             sheetsSold: { $sum: "$sheetsSold" },
-            totalRevenue: { $sum: "$totalRevenue" },
-            totalProfit: { 
-              $sum: { 
-                $subtract: [
-                  "$totalRevenue",
-                  { $add: [
-                    { $multiply: ["$sheetsSold", 47] },
-                    { $sum: [] } // Placeholder for petrol expenses
-                  ]}
-                ]
-              }
-            }
+            revenue: { $sum: "$totalRevenue" },
+            productionCost: { $sum: { $multiply: ["$sheetsSold", 47] } }
           }
         },
         { $sort: { "_id": 1 } }
       ]);
+
+      const petrolChartData = await Expense.aggregate([
+        { 
+          $match: { 
+            ...dateFilter,
+            type: 'petrol' 
+          } 
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            petrolExpense: { $sum: "$amount" }
+          }
+        },
+        { $sort: { "_id": 1 } }
+      ]);
+
+      // Merge chart data
+      chartData = salesChartData.map(sale => {
+        const petrol = petrolChartData.find(p => p._id === sale._id);
+        return {
+          period: sale._id,
+          sheetsSold: sale.sheetsSold,
+          revenue: sale.revenue,
+          productionCost: sale.productionCost,
+          petrolExpense: petrol ? petrol.petrolExpense : 0,
+          profit: sale.revenue - sale.productionCost - (petrol ? petrol.petrolExpense : 0)
+        };
+      });
     }
 
-    const result = {
-      ...(salesSummary[0] || { 
-        totalSheets: 0,
-        totalRevenue: 0,
-        totalProductionCost: 0,
-        avgPricePerSheet: 0
-      }),
-      ...(expensesSummary[0] || { totalPetrolExpense: 0 }),
+    // Prepare response
+    const response = {
+      totalSheets: salesSummary[0]?.totalSheets || 0,
+      totalRevenue: salesSummary[0]?.totalRevenue || 0,
+      totalProductionCost: salesSummary[0]?.totalProductionCost || 0,
+      totalPetrol: petrolExpenses[0]?.totalPetrol || 0,
+      totalOtherExpenses: otherExpenses[0]?.totalOtherExpenses || 0,
+      avgPricePerSheet: salesSummary[0]?.avgPricePerSheet ? 
+        parseFloat(salesSummary[0].avgPricePerSheet.toFixed(2)) : 0,
       chartData: chartData
     };
 
-    // Calculate profit
-    result.totalProfit = result.totalRevenue - result.totalProductionCost - result.totalPetrolExpense;
-    result.avgPricePerSheet = result.avgPricePerSheet ? parseFloat(result.avgPricePerSheet.toFixed(2)) : 0;
+    // Calculate profit metrics
+    response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalPetrol - response.totalOtherExpenses;
+    response.profitMargin = response.totalRevenue > 0 ? 
+      ((response.netProfit / response.totalRevenue) * 100).toFixed(2) : 0;
 
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: response });
   } catch (err) {
     console.error(err);
     res.status(500).json({ 
       success: false, 
-      message: 'Error generating report', 
+      message: 'Error generating summary', 
       error: err.message 
     });
   }
+});
+
+// Serve frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Something broke!', 
+    error: err.message 
+  });
 });
 
 // Start server
