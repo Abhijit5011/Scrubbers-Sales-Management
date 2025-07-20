@@ -1113,7 +1113,7 @@
               <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue/sale.sheetsSold).toFixed(2)}</td>
               <td>₹${sale.totalRevenue}</td>
               <td>
-                <button class="btn btn-sm btn-success edit-sale" data-id="${sale._id}"><i class="fas fa-edit"></i></button>
+                
                 <button class="btn btn-sm btn-danger delete-sale" data-id="${sale._id}"><i class="fas fa-trash"></i></button>
               </td>
             `;
@@ -1131,7 +1131,7 @@
               <td>${expense.description}</td>
               <td>₹${expense.amount}</td>
               <td>
-                <button class="btn btn-sm btn-success edit-expense" data-id="${expense._id}"><i class="fas fa-edit"></i></button>
+                
                 <button class="btn btn-sm btn-danger delete-expense" data-id="${expense._id}"><i class="fas fa-trash"></i></button>
               </td>
             `;
@@ -1162,55 +1162,7 @@
       }
     }
     
-    // Edit Sale
-    async function editSale(id) {
-      try {
-        const response = await fetch(`/api/sales/${id}`);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load sale data');
-        }
-        
-        const sale = result.data;
-        
-        document.getElementById('editSaleId').value = sale._id;
-        document.getElementById('editSaleDate').value = new Date(sale.date).toISOString().split('T')[0];
-        document.getElementById('editSheetsSold').value = sale.sheetsSold;
-        document.getElementById('editTotalRevenue').value = sale.totalRevenue;
-        
-        document.getElementById('editSaleModal').style.display = 'flex';
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading sale data. Please try again.', 'danger');
-      }
-    }
-    
-    // Edit Expense
-    async function editExpense(id) {
-      try {
-        const response = await fetch(`/api/expenses/${id}`);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load expense data');
-        }
-        
-        const expense = result.data;
-        
-        document.getElementById('editExpenseId').value = expense._id;
-        document.getElementById('editExpenseDate').value = new Date(expense.date).toISOString().split('T')[0];
-        document.getElementById('editExpenseType').value = expense.type;
-        document.getElementById('editExpenseAmount').value = expense.amount;
-        document.getElementById('editExpenseDescription').value = expense.description;
-        
-        document.getElementById('editExpenseModal').style.display = 'flex';
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading expense data. Please try again.', 'danger');
-      }
-    }
-    
+   
     // Update Sale
     document.getElementById('updateSaleBtn').addEventListener('click', async function() {
       const form = document.getElementById('editSaleForm');
