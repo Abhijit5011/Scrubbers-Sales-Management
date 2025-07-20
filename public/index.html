@@ -273,6 +273,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      margin-top: 6px;
     }
     
     .btn {
@@ -522,9 +523,7 @@
     }
     
     @media print {
-      body * {
-        visibility: hidden;
-      }
+    
       .print-container, .print-container * {
         visibility: visible;
       }
@@ -538,9 +537,7 @@
       .no-print {
         display: none;
       }
-      .print-only {
-        display: block;
-      }
+      
     }
     
     @media (max-width: 768px) {
@@ -616,9 +613,9 @@
     
     <div class="tabs-container">
       <div class="tabs">
-        <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
+        <div class="tab active" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
         <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
-        <div class="tab active" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
+        <div class="tab" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
         <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
       </div>
       
@@ -890,8 +887,7 @@
       </div>
     </div>
   </div>
-
-  <script>
+<script>
     // DOM Elements
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -977,8 +973,6 @@
     // Download report as PDF
     document.getElementById('downloadReport').addEventListener('click', () => {
       showAlert('Report download functionality will be implemented soon!', 'success');
-      // In a real implementation, you would use a library like jsPDF or html2pdf
-      // to convert the report content to a PDF file and trigger a download
     });
     
     // Sales Form Submission
@@ -992,11 +986,6 @@
       };
       
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, you would make an actual API call:
-        /*
         const response = await fetch('/api/sales', {
           method: 'POST',
           headers: {
@@ -1006,14 +995,16 @@
         });
         
         const result = await response.json();
-        */
         
-        // For demo purposes, we'll just show a success message
-        showAlert('Sales entry saved successfully!', 'success');
-        this.reset();
-        this.saleDate.value = todayDate;
-        updateDashboard();
-        loadTransactions();
+        if (result.success) {
+          showAlert('Sales entry saved successfully!', 'success');
+          this.reset();
+          this.saleDate.value = todayDate;
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error saving data', 'danger');
+        }
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error saving data. Please try again.', 'danger');
@@ -1032,11 +1023,6 @@
       };
       
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, you would make an actual API call:
-        /*
         const response = await fetch('/api/expenses', {
           method: 'POST',
           headers: {
@@ -1046,14 +1032,16 @@
         });
         
         const result = await response.json();
-        */
         
-        // For demo purposes, we'll just show a success message
-        showAlert('Expense saved successfully!', 'success');
-        this.reset();
-        this.expenseDate.value = todayDate;
-        updateDashboard();
-        loadTransactions();
+        if (result.success) {
+          showAlert('Expense saved successfully!', 'success');
+          this.reset();
+          this.expenseDate.value = todayDate;
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error saving expense', 'danger');
+        }
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error saving expense. Please try again.', 'danger');
@@ -1076,101 +1064,56 @@
         const endDate = document.getElementById('endDate').value;
         const type = document.getElementById('transactionType').value;
         
-        // Simulate API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 500));
+        let url = '/api/transactions?';
+        if (startDate) url += `startDate=${startDate}&`;
+        if (endDate) url += `endDate=${endDate}&`;
+        if (type !== 'all') url += `type=${type}`;
         
-        // Mock data for demonstration
-        const mockSales = [
-          {
-            _id: '1',
-            date: new Date().toISOString(),
-            sheetsSold: 10,
-            totalRevenue: 600
-          },
-          {
-            _id: '2',
-            date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-            sheetsSold: 8,
-            totalRevenue: 480
-          }
-        ];
+        const response = await fetch(url);
+        const result = await response.json();
         
-        const mockExpenses = [
-          {
-            _id: '1',
-            date: new Date().toISOString(),
-            type: 'petrol',
-            amount: 500,
-            description: 'Petrol for delivery'
-          },
-          {
-            _id: '2',
-            date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-            type: 'other',
-            amount: 200,
-            description: 'Office supplies'
-          }
-        ];
-        
-        // Filter mock data based on selected filters
-        let filteredSales = [...mockSales];
-        let filteredExpenses = [...mockExpenses];
-        
-        if (startDate && endDate) {
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          
-          filteredSales = filteredSales.filter(sale => {
-            const saleDate = new Date(sale.date);
-            return saleDate >= start && saleDate <= end;
-          });
-          
-          filteredExpenses = filteredExpenses.filter(expense => {
-            const expenseDate = new Date(expense.date);
-            return expenseDate >= start && expenseDate <= end;
-          });
-        }
-        
-        if (type === 'sales') {
-          filteredExpenses = [];
-        } else if (type === 'expenses') {
-          filteredSales = [];
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to load transactions');
         }
         
         const tbody = document.querySelector('#transactionsTable tbody');
         tbody.innerHTML = '';
         
         // Process sales
-        filteredSales.forEach(sale => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${new Date(sale.date).toLocaleDateString()}</td>
-            <td><span class="badge badge-sale">Sale</span></td>
-            <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue/sale.sheetsSold).toFixed(2)}</td>
-            <td>₹${sale.totalRevenue}</td>
-            <td>
-              <button class="btn btn-sm btn-success edit-sale" data-id="${sale._id}"><i class="fas fa-edit"></i></button>
-              <button class="btn btn-sm btn-danger delete-sale" data-id="${sale._id}"><i class="fas fa-trash"></i></button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
+        if (result.data.sales) {
+          result.data.sales.forEach(sale => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${new Date(sale.date).toLocaleDateString()}</td>
+              <td><span class="badge badge-sale">Sale</span></td>
+              <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue/sale.sheetsSold).toFixed(2)}</td>
+              <td>₹${sale.totalRevenue}</td>
+              <td>
+                <button class="btn btn-sm btn-success edit-sale" data-id="${sale._id}"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger delete-sale" data-id="${sale._id}"><i class="fas fa-trash"></i></button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
         
         // Process expenses
-        filteredExpenses.forEach(expense => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${new Date(expense.date).toLocaleDateString()}</td>
-            <td><span class="badge badge-expense">Expense</span></td>
-            <td>${expense.description}</td>
-            <td>₹${expense.amount}</td>
-            <td>
-              <button class="btn btn-sm btn-success edit-expense" data-id="${expense._id}"><i class="fas fa-edit"></i></button>
-              <button class="btn btn-sm btn-danger delete-expense" data-id="${expense._id}"><i class="fas fa-trash"></i></button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
+        if (result.data.expenses) {
+          result.data.expenses.forEach(expense => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${new Date(expense.date).toLocaleDateString()}</td>
+              <td><span class="badge badge-expense">Expense</span></td>
+              <td>${expense.description}</td>
+              <td>₹${expense.amount}</td>
+              <td>
+                <button class="btn btn-sm btn-success edit-expense" data-id="${expense._id}"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger delete-expense" data-id="${expense._id}"><i class="fas fa-trash"></i></button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
         
         // Add event listeners to edit and delete buttons
         document.querySelectorAll('.edit-sale').forEach(btn => {
@@ -1198,37 +1141,21 @@
     // Edit Sale
     async function editSale(id) {
       try {
-        // Simulate API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const response = await fetch(`/api/sales/${id}`);
+        const result = await response.json();
         
-        // Mock data for demonstration
-        const mockSales = [
-          {
-            _id: '1',
-            date: new Date().toISOString(),
-            sheetsSold: 10,
-            totalRevenue: 600
-          },
-          {
-            _id: '2',
-            date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-            sheetsSold: 8,
-            totalRevenue: 480
-          }
-        ];
-        
-        const sale = mockSales.find(s => s._id === id);
-        
-        if (sale) {
-          document.getElementById('editSaleId').value = sale._id;
-          document.getElementById('editSaleDate').value = sale.date.split('T')[0];
-          document.getElementById('editSheetsSold').value = sale.sheetsSold;
-          document.getElementById('editTotalRevenue').value = sale.totalRevenue;
-          
-          document.getElementById('editSaleModal').style.display = 'flex';
-        } else {
-          showAlert('Sale record not found', 'danger');
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to load sale data');
         }
+        
+        const sale = result.data;
+        
+        document.getElementById('editSaleId').value = sale._id;
+        document.getElementById('editSaleDate').value = new Date(sale.date).toISOString().split('T')[0];
+        document.getElementById('editSheetsSold').value = sale.sheetsSold;
+        document.getElementById('editTotalRevenue').value = sale.totalRevenue;
+        
+        document.getElementById('editSaleModal').style.display = 'flex';
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error loading sale data. Please try again.', 'danger');
@@ -1238,40 +1165,22 @@
     // Edit Expense
     async function editExpense(id) {
       try {
-        // Simulate API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const response = await fetch(`/api/expenses/${id}`);
+        const result = await response.json();
         
-        // Mock data for demonstration
-        const mockExpenses = [
-          {
-            _id: '1',
-            date: new Date().toISOString(),
-            type: 'petrol',
-            amount: 500,
-            description: 'Petrol for delivery'
-          },
-          {
-            _id: '2',
-            date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-            type: 'other',
-            amount: 200,
-            description: 'Office supplies'
-          }
-        ];
-        
-        const expense = mockExpenses.find(e => e._id === id);
-        
-        if (expense) {
-          document.getElementById('editExpenseId').value = expense._id;
-          document.getElementById('editExpenseDate').value = expense.date.split('T')[0];
-          document.getElementById('editExpenseType').value = expense.type;
-          document.getElementById('editExpenseAmount').value = expense.amount;
-          document.getElementById('editExpenseDescription').value = expense.description;
-          
-          document.getElementById('editExpenseModal').style.display = 'flex';
-        } else {
-          showAlert('Expense record not found', 'danger');
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to load expense data');
         }
+        
+        const expense = result.data;
+        
+        document.getElementById('editExpenseId').value = expense._id;
+        document.getElementById('editExpenseDate').value = new Date(expense.date).toISOString().split('T')[0];
+        document.getElementById('editExpenseType').value = expense.type;
+        document.getElementById('editExpenseAmount').value = expense.amount;
+        document.getElementById('editExpenseDescription').value = expense.description;
+        
+        document.getElementById('editExpenseModal').style.display = 'flex';
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error loading expense data. Please try again.', 'danger');
@@ -1290,11 +1199,6 @@
       };
       
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, you would make an actual API call:
-        /*
         const response = await fetch(`/api/sales/${id}`, {
           method: 'PUT',
           headers: {
@@ -1304,13 +1208,15 @@
         });
         
         const result = await response.json();
-        */
         
-        // For demo purposes, we'll just show a success message
-        showAlert('Sale updated successfully!', 'success');
-        document.getElementById('editSaleModal').style.display = 'none';
-        updateDashboard();
-        loadTransactions();
+        if (result.success) {
+          showAlert('Sale updated successfully!', 'success');
+          document.getElementById('editSaleModal').style.display = 'none';
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error updating sale', 'danger');
+        }
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error updating sale. Please try again.', 'danger');
@@ -1330,11 +1236,6 @@
       };
       
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, you would make an actual API call:
-        /*
         const response = await fetch(`/api/expenses/${id}`, {
           method: 'PUT',
           headers: {
@@ -1344,13 +1245,15 @@
         });
         
         const result = await response.json();
-        */
         
-        // For demo purposes, we'll just show a success message
-        showAlert('Expense updated successfully!', 'success');
-        document.getElementById('editExpenseModal').style.display = 'none';
-        updateDashboard();
-        loadTransactions();
+        if (result.success) {
+          showAlert('Expense updated successfully!', 'success');
+          document.getElementById('editExpenseModal').style.display = 'none';
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error updating expense', 'danger');
+        }
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error updating expense. Please try again.', 'danger');
@@ -1369,24 +1272,21 @@
       if (!currentDeleteId || !currentDeleteType) return;
       
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, you would make an actual API call:
-        /*
         const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
         const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
           method: 'DELETE'
         });
         
         const result = await response.json();
-        */
         
-        // For demo purposes, we'll just show a success message
-        showAlert('Record deleted successfully!', 'success');
-        document.getElementById('deleteModal').style.display = 'none';
-        updateDashboard();
-        loadTransactions();
+        if (result.success) {
+          showAlert('Record deleted successfully!', 'success');
+          document.getElementById('deleteModal').style.display = 'none';
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error deleting record', 'danger');
+        }
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error deleting record. Please try again.', 'danger');
@@ -1399,102 +1299,14 @@
     // Update Dashboard
     async function updateDashboard() {
       try {
-        // Simulate API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const response = await fetch(`/api/summary?period=${currentPeriod}`);
+        const result = await response.json();
         
-        // Mock data for different periods
-        const mockData = {
-          today: {
-            totalRevenue: 600,
-            totalSheets: 10,
-            totalProductionCost: 470,
-            totalPetrol: 500,
-            totalOtherExpenses: 200,
-            netProfit: -70,
-            profitMargin: -11.67,
-            avgPricePerSheet: 60,
-            chartData: [
-              { period: 'Morning', sheetsSold: 3, revenue: 180, productionCost: 141, profit: -41 },
-              { period: 'Afternoon', sheetsSold: 4, revenue: 240, productionCost: 188, profit: -28 },
-              { period: 'Evening', sheetsSold: 3, revenue: 180, productionCost: 141, profit: -1 }
-            ]
-          },
-          week: {
-            totalRevenue: 4200,
-            totalSheets: 70,
-            totalProductionCost: 3290,
-            totalPetrol: 1500,
-            totalOtherExpenses: 800,
-            netProfit: -1390,
-            profitMargin: -33.1,
-            avgPricePerSheet: 60,
-            chartData: [
-              { period: 'Mon', sheetsSold: 10, revenue: 600, productionCost: 470, profit: -370 },
-              { period: 'Tue', sheetsSold: 8, revenue: 480, productionCost: 376, profit: -296 },
-              { period: 'Wed', sheetsSold: 12, revenue: 720, productionCost: 564, profit: -144 },
-              { period: 'Thu', sheetsSold: 15, revenue: 900, productionCost: 705, profit: 195 },
-              { period: 'Fri', sheetsSold: 10, revenue: 600, productionCost: 470, profit: -70 },
-              { period: 'Sat', sheetsSold: 10, revenue: 600, productionCost: 470, profit: -70 },
-              { period: 'Sun', sheetsSold: 5, revenue: 300, productionCost: 235, profit: -635 }
-            ]
-          },
-          month: {
-            totalRevenue: 18000,
-            totalSheets: 300,
-            totalProductionCost: 14100,
-            totalPetrol: 6000,
-            totalOtherExpenses: 3000,
-            netProfit: -5100,
-            profitMargin: -28.33,
-            avgPricePerSheet: 60,
-            chartData: [
-              { period: 'Week 1', sheetsSold: 70, revenue: 4200, productionCost: 3290, profit: -2090 },
-              { period: 'Week 2', sheetsSold: 80, revenue: 4800, productionCost: 3760, profit: -1960 },
-              { period: 'Week 3', sheetsSold: 90, revenue: 5400, productionCost: 4230, profit: -1830 },
-              { period: 'Week 4', sheetsSold: 60, revenue: 3600, productionCost: 2820, profit: -2220 }
-            ]
-          },
-          year: {
-            totalRevenue: 216000,
-            totalSheets: 3600,
-            totalProductionCost: 169200,
-            totalPetrol: 72000,
-            totalOtherExpenses: 36000,
-            netProfit: -61200,
-            profitMargin: -28.33,
-            avgPricePerSheet: 60,
-            chartData: [
-              { period: 'Jan', sheetsSold: 300, revenue: 18000, productionCost: 14100, profit: -14100 },
-              { period: 'Feb', sheetsSold: 280, revenue: 16800, productionCost: 13160, profit: -14360 },
-              { period: 'Mar', sheetsSold: 320, revenue: 19200, productionCost: 15040, profit: -13840 },
-              { period: 'Apr', sheetsSold: 300, revenue: 18000, productionCost: 14100, profit: -14100 },
-              { period: 'May', sheetsSold: 310, revenue: 18600, productionCost: 14570, profit: -13970 },
-              { period: 'Jun', sheetsSold: 290, revenue: 17400, productionCost: 13630, profit: -14230 },
-              { period: 'Jul', sheetsSold: 330, revenue: 19800, productionCost: 15510, profit: -13710 },
-              { period: 'Aug', sheetsSold: 340, revenue: 20400, productionCost: 15980, profit: -13580 },
-              { period: 'Sep', sheetsSold: 310, revenue: 18600, productionCost: 14570, profit: -13970 },
-              { period: 'Oct', sheetsSold: 320, revenue: 19200, productionCost: 15040, profit: -13840 },
-              { period: 'Nov', sheetsSold: 300, revenue: 18000, productionCost: 14100, profit: -14100 },
-              { period: 'Dec', sheetsSold: 300, revenue: 18000, productionCost: 14100, profit: -14100 }
-            ]
-          },
-          all: {
-            totalRevenue: 432000,
-            totalSheets: 7200,
-            totalProductionCost: 338400,
-            totalPetrol: 144000,
-            totalOtherExpenses: 72000,
-            netProfit: -122400,
-            profitMargin: -28.33,
-            avgPricePerSheet: 60,
-            chartData: [
-              { period: '2022', sheetsSold: 3600, revenue: 216000, productionCost: 169200, profit: -73200 },
-              { period: '2023', sheetsSold: 3600, revenue: 216000, productionCost: 169200, profit: -73200 }
-            ]
-          }
-        };
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to load dashboard data');
+        }
         
-        const data = mockData[currentPeriod];
+        const data = result.data;
         
         // Update summary cards
         document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
@@ -1511,7 +1323,7 @@
         document.getElementById('report-petrol').textContent = `₹${data.totalPetrol || 0}`;
         document.getElementById('report-other-expenses').textContent = `₹${data.totalOtherExpenses || 0}`;
         document.getElementById('report-profit').textContent = `₹${data.netProfit || 0}`;
-        document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin.toFixed(2)}%` : '0%';
+        document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin}%` : '0%';
         document.getElementById('report-avg-price').textContent = data.avgPricePerSheet ? `₹${data.avgPricePerSheet.toFixed(2)}` : '₹0';
         
         // Update charts
@@ -1668,6 +1480,6 @@
       loadTransactions();
       updateReportPeriodText();
     });
-  </script>
+</script>
 </body>
 </html>
