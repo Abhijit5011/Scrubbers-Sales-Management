@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Sales Report</title></head>
+<body>
+  <h1>Sales & Expenses Report</h1>
+  <div id="report"></div>
+  <script>
+    fetch('/report')
+      .then(res => res.json())
+      .then(data => {
+        const div = document.getElementById('report');
+        let html = '<h2>Sales:</h2><ul>';
+        data.sales.forEach(s => {
+          html += `<li>${new Date(s.date).toLocaleDateString()} - ${s.sheetsSold} sheets @ ₹${s.sellingPrice}</li>`;
+        });
+        html += '</ul><h2>Expenses:</h2><ul>';
+        data.expenses.forEach(e => {
+          html += `<li>${new Date(e.date).toLocaleDateString()} - ${e.type}: ₹${e.amount}</li>`;
+        });
+        html += '</ul>';
+        div.innerHTML = html;
+      });
+  </script>
+</body>
+</html>
