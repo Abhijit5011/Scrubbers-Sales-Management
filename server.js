@@ -54,3 +54,16 @@ app.get('/data', async (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
 });
+
+app.post('/submit', async (req, res) => {
+  try {
+    console.log("📥 Received data:", req.body); // Debug line
+    const entry = new Sheet(req.body);
+    await entry.save();
+    res.status(201).send('✅ Entry saved successfully!');
+  } catch (error) {
+    console.error("❌ Error saving to DB:", error); // Debug line
+    res.status(500).send('❌ Failed to save data');
+  }
+});
+
