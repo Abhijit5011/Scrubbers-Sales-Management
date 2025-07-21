@@ -24,7 +24,25 @@
       </div>
     </header>
 
-
+    <div class="dashboard-filter">
+  <div class="filter-options">
+    <button class="filter-btn active" data-period="daily">
+      <i class="fas fa-calendar-day"></i> Daily
+    </button>
+    <button class="filter-btn" data-period="weekly">
+      <i class="fas fa-calendar-week"></i> Weekly
+    </button>
+    <button class="filter-btn" data-period="monthly">
+      <i class="fas fa-calendar-alt"></i> Monthly
+    </button>
+    <button class="filter-btn" data-period="yearly">
+      <i class="fas fa-calendar"></i> Yearly
+    </button>
+    <button class="filter-btn" data-period="all">
+      <i class="fas fa-infinity"></i> All Time
+    </button>
+  </div>
+</div>
     
     <div class="dashboard">
       <div class="card">
@@ -229,360 +247,364 @@
     </div>
   </div>
 <script>
-    // DOM Elements
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const alertBox = document.getElementById('alert');
-    const salesForm = document.getElementById('salesForm');
-    const todayDate = new Date().toISOString().split('T')[0];
-    let currentDeleteId = null;
-    
-    // Set current date
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-    
-    // Set today's date as default
-    document.getElementById('saleDate').value = todayDate;
-    
-    // Initialize modals
-    const modals = document.querySelectorAll('.modal');
-    const closeModalBtns = document.querySelectorAll('.close-modal');
-    
-    closeModalBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modals.forEach(modal => modal.style.display = 'none');
-      });
-    });
-    
-    window.addEventListener('click', (e) => {
-      if (e.target.classList.contains('modal')) {
-        modals.forEach(modal => modal.style.display = 'none');
-      }
-    });
-    
-    // Tab switching
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        
-        tab.classList.add('active');
-        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-        
-        // Load data when switching to transactions tab
-        if (tab.dataset.tab === 'transactions') {
-          loadTransactions();
-        }
-      });
-    });
-    
-    // Toggle expense section
-    document.getElementById('addExpenseBtn').addEventListener('click', function() {
-      const expenseSection = document.getElementById('expenseSection');
-      if (expenseSection.style.display === 'none') {
-        expenseSection.style.display = 'block';
-        this.innerHTML = '<i class="fas fa-minus"></i> Remove Expense';
-      } else {
-        expenseSection.style.display = 'none';
-        this.innerHTML = '<i class="fas fa-plus"></i> Add Expense';
-        document.getElementById('expenseAmount').value = '';
-        document.getElementById('expenseDescription').value = 'Petrol';
-        document.getElementById('otherExpenseDesc').value = '';
-        document.getElementById('otherExpenseContainer').style.display = 'none';
-      }
-    });
-    
-    // Toggle other expense description
-    document.getElementById('expenseDescription').addEventListener('change', function() {
-      if (this.value === 'Other') {
-        document.getElementById('otherExpenseContainer').style.display = 'block';
-      } else {
-        document.getElementById('otherExpenseContainer').style.display = 'none';
-      }
-    });
-    
-    // Sales Form Submission
-    salesForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const saleData = {
-        date: this.saleDate.value,
-        sheetsSold: parseInt(this.sheetsSold.value) || 0,
-        totalRevenue: parseInt(this.totalAmount.value)
-      };
-      
-      try {
-        // Save sale first
-        const saleResponse = await fetch('/api/sales', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(saleData)
-        });
-        
-        const saleResult = await saleResponse.json();
-        
-        if (!saleResult.success) {
-          throw new Error(saleResult.message || 'Error saving sale data');
-        }
-        
-        // Check if expense is added
-        if (document.getElementById('expenseSection').style.display === 'block') {
-          const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
-            ? document.getElementById('otherExpenseDesc').value 
-            : document.getElementById('expenseDescription').value;
-            
-          const expenseType = expenseDesc.toLowerCase() === 'petrol' ? 'petrol' : 'other';
-          
-          const expenseData = {
-            date: this.saleDate.value,
-            type: expenseType,
-            amount: parseInt(document.getElementById('expenseAmount').value),
-            description: expenseDesc
-          };
-          
-          const expenseResponse = await fetch('/api/expenses', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(expenseData)
-          });
-          
-          const expenseResult = await expenseResponse.json();
-          
-          if (!expenseResult.success) {
-            throw new Error(expenseResult.message || 'Error saving expense data');
-          }
-        }
-        
-        showAlert('Transaction saved successfully!', 'success');
-        this.reset();
-        this.saleDate.value = todayDate;
-        document.getElementById('expenseSection').style.display = 'none';
-        document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
-        updateDashboard();
-        loadTransactions();
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert(error.message || 'Error saving data. Please try again.', 'danger');
-      }
-    });
-    
-    // Filter Transactions
-    document.getElementById('filterBtn').addEventListener('click', loadTransactions);
-    
-    // Load transactions with filters
-    async function loadTransactions() {
-      try {
-        const typeFilter = document.getElementById('transactionTypeFilter').value;
-        const monthFilter = document.getElementById('monthFilter').value;
-        const yearFilter = document.getElementById('yearFilter').value;
-        
-        // Build date filter if month/year is selected
-        let dateFilter = {};
-        if (monthFilter !== 'all' || yearFilter !== 'all') {
-          const startDate = new Date(
-            yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
-            monthFilter !== 'all' ? monthFilter - 1 : 0,
-            1
-          );
-          
-          const endDate = new Date(
-            yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
-            monthFilter !== 'all' ? monthFilter : 11,
-            monthFilter !== 'all' ? 
-              new Date(yearFilter, monthFilter, 0).getDate() : 31,
-            23, 59, 59
-          );
-          
-          dateFilter = {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString()
-          };
-        }
-        
-        // Fetch data based on filters
-        let sales = [];
-        let expenses = [];
-        
-        if (typeFilter === 'all' || typeFilter === 'sale') {
-          const salesResponse = await fetch('/api/transactions?' + new URLSearchParams({
-            ...dateFilter,
-            type: 'sales'
-          }));
-          const salesResult = await salesResponse.json();
-          sales = salesResult.data?.sales || [];
-        }
-        
-        if (typeFilter === 'all' || typeFilter === 'expense') {
-          const expensesResponse = await fetch('/api/transactions?' + new URLSearchParams({
-            ...dateFilter,
-            type: 'expenses'
-          }));
-          const expensesResult = await expensesResponse.json();
-          expenses = expensesResult.data?.expenses || [];
-        }
-        
-        // Combine and sort transactions by date
-        const transactions = [...sales.map(s => ({ ...s, type: 'sale' })), ...expenses.map(e => ({ ...e, type: 'expense' }))]
-          .sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // Render transactions
-        const tbody = document.querySelector('#transactionsTable tbody');
-        tbody.innerHTML = '';
-        
-        transactions.forEach(transaction => {
-          const row = document.createElement('tr');
-          
-          let details = '';
-          let badgeClass = '';
-          
-          if (transaction.type === 'sale') {
-            details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
-            badgeClass = 'badge-sale';
-          } else {
-            details = transaction.description || 'Expense';
-            badgeClass = 'badge-expense';
-          }
-          
-          row.innerHTML = `
-            <td>${new Date(transaction.date).toLocaleDateString()}</td>
-            <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
-            <td>${details}</td>
-            <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
-            <td>
-              <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-        
-        // Add event listeners to delete buttons
-        document.querySelectorAll('.delete-transaction').forEach(btn => {
-          btn.addEventListener('click', () => confirmDelete(btn.dataset.id, btn.dataset.type));
-        });
-        
-        // Update summary
-        updateSummary(sales, expenses);
-        
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading transactions. Please try again.', 'danger');
-      }
-    }
-    
-    // Update summary section
-    function updateSummary(sales, expenses) {
-      const totalSheets = sales.reduce((sum, sale) => sum + sale.sheetsSold, 0);
-      const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalRevenue, 0);
-      const totalProductionCost = sales.reduce((sum, sale) => sum + (sale.sheetsSold * 47), 0);
-      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-      const netProfit = totalRevenue - totalProductionCost - totalExpenses;
-      const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
-      
-      document.getElementById('report-sheets').textContent = totalSheets;
-      document.getElementById('report-revenue').textContent = `₹${totalRevenue}`;
-      document.getElementById('report-production').textContent = `₹${totalProductionCost}`;
-      document.getElementById('report-expenses').textContent = `₹${totalExpenses}`;
-      document.getElementById('report-profit').textContent = `₹${netProfit}`;
-      document.getElementById('report-margin').textContent = `${profitMargin}%`;
-    }
-    
-    // Confirm Delete
-    function confirmDelete(id, type) {
-      currentDeleteId = id;
-      currentDeleteType = type;
-      document.getElementById('deleteModal').style.display = 'flex';
-    }
-    
-    // Delete Record
-    document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-      if (!currentDeleteId) return;
-      
-      try {
-        const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
-        const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
-          method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Record deleted successfully!', 'success');
-          document.getElementById('deleteModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          throw new Error(result.message || 'Error deleting record');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert(error.message || 'Error deleting record. Please try again.', 'danger');
-      }
-      
-      currentDeleteId = null;
-      currentDeleteType = null;
-    });
-    
-    // Add this to your existing JavaScript code
+  // DOM Elements
+const tabs = document.querySelectorAll('.tab');
+const tabContents = document.querySelectorAll('.tab-content');
+const alertBox = document.getElementById('alert');
+const salesForm = document.getElementById('salesForm');
+const todayDate = new Date().toISOString().split('T')[0];
+let currentDeleteId = null;
+let currentDeleteType = null;
 
-// Dashboard Filter Elements
-const dashboardFilterContainer = document.createElement('div');
-dashboardFilterContainer.className = 'dashboard-filter';
-dashboardFilterContainer.innerHTML = `
-  <div class="filter-options">
-    <button class="filter-btn active" data-period="daily">Daily</button>
-    <button class="filter-btn" data-period="weekly">Weekly</button>
-    <button class="filter-btn" data-period="monthly">Monthly</button>
-    <button class="filter-btn" data-period="yearly">Yearly</button>
-    <button class="filter-btn" data-period="all">All Time</button>
-  </div>
-`;
+// Set current date
+document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric' 
+});
 
-// Insert the filter container just before the dashboard
-const dashboard = document.querySelector('.dashboard');
-dashboard.parentNode.insertBefore(dashboardFilterContainer, dashboard);
+// Set today's date as default
+document.getElementById('saleDate').value = todayDate;
 
-// Dashboard Filter Functionality
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    // Remove active class from all buttons
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    
-    // Add active class to clicked button
-    this.classList.add('active');
-    
-    // Update dashboard with selected period
-    updateDashboard(this.dataset.period);
+// Initialize modals
+const modals = document.querySelectorAll('.modal');
+const closeModalBtns = document.querySelectorAll('.close-modal');
+
+closeModalBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modals.forEach(modal => modal.style.display = 'none');
   });
 });
 
-// Modified updateDashboard function to accept period parameter
-async function updateDashboard(period = 'daily') {
-  try {
-    const response = await fetch(`/api/summary?period=${period}`);
-    const result = await response.json();
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal')) {
+    modals.forEach(modal => modal.style.display = 'none');
+  }
+});
+
+// Tab switching
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
     
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to load dashboard data');
+    tab.classList.add('active');
+    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+    
+    if (tab.dataset.tab === 'transactions') {
+      loadTransactions();
+    }
+  });
+});
+
+// Toggle expense section
+document.getElementById('addExpenseBtn').addEventListener('click', function() {
+  const expenseSection = document.getElementById('expenseSection');
+  if (expenseSection.style.display === 'none') {
+    expenseSection.style.display = 'block';
+    this.innerHTML = '<i class="fas fa-minus"></i> Remove Expense';
+  } else {
+    expenseSection.style.display = 'none';
+    this.innerHTML = '<i class="fas fa-plus"></i> Add Expense';
+    document.getElementById('expenseAmount').value = '';
+    document.getElementById('expenseDescription').value = 'Petrol';
+    document.getElementById('otherExpenseDesc').value = '';
+    document.getElementById('otherExpenseContainer').style.display = 'none';
+  }
+});
+
+// Toggle other expense description
+document.getElementById('expenseDescription').addEventListener('change', function() {
+  if (this.value === 'Other') {
+    document.getElementById('otherExpenseContainer').style.display = 'block';
+  } else {
+    document.getElementById('otherExpenseContainer').style.display = 'none';
+  }
+});
+
+// Dashboard Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize dashboard with daily view
+  updateDashboard('daily');
+  
+  // Set up filter button event listeners
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Remove active class from all buttons
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      
+      // Add active class to clicked button
+      this.classList.add('active');
+      
+      // Update dashboard with selected period
+      updateDashboard(this.dataset.period);
+    });
+  });
+});
+
+// Sales Form Submission
+salesForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const saleData = {
+    date: this.saleDate.value,
+    sheetsSold: parseInt(this.sheetsSold.value) || 0,
+    totalRevenue: parseInt(this.totalAmount.value)
+  };
+  
+  try {
+    // Save sale first
+    const saleResponse = await fetch('/api/sales', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(saleData)
+    });
+    
+    const saleResult = await saleResponse.json();
+    
+    if (!saleResult.success) {
+      throw new Error(saleResult.message || 'Error saving sale data');
     }
     
-    const data = result.data;
+    // Check if expense is added
+    if (document.getElementById('expenseSection').style.display === 'block') {
+      const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
+        ? document.getElementById('otherExpenseDesc').value 
+        : document.getElementById('expenseDescription').value;
+        
+      const expenseType = expenseDesc.toLowerCase() === 'petrol' ? 'petrol' : 'other';
+      
+      const expenseData = {
+        date: this.saleDate.value,
+        type: expenseType,
+        amount: parseInt(document.getElementById('expenseAmount').value),
+        description: expenseDesc
+      };
+      
+      const expenseResponse = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expenseData)
+      });
+      
+      const expenseResult = await expenseResponse.json();
+      
+      if (!expenseResult.success) {
+        throw new Error(expenseResult.message || 'Error saving expense data');
+      }
+    }
     
-    // Update summary cards
-    document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
-    document.getElementById('totalSheets').textContent = data.totalSheets || 0;
-    document.getElementById('totalExpenses').textContent = data.totalPetrol + data.totalOtherExpenses || 0;
-    document.getElementById('expenseCount').textContent = data.expenseCount || 'N/A';
-    document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
-    document.getElementById('netProfit').textContent = data.netProfit || 0;
-    document.getElementById('profitMargin').textContent = data.profitMargin || 0;
+    showAlert('Transaction saved successfully!', 'success');
+    this.reset();
+    this.saleDate.value = todayDate;
+    document.getElementById('expenseSection').style.display = 'none';
+    document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
+    updateDashboard();
+    loadTransactions();
+  } catch (error) {
+    console.error('Error:', error);
+    showAlert(error.message || 'Error saving data. Please try again.', 'danger');
+  }
+});
+
+// Filter Transactions
+document.getElementById('filterBtn').addEventListener('click', loadTransactions);
+
+// Load transactions with filters
+async function loadTransactions() {
+  try {
+    const typeFilter = document.getElementById('transactionTypeFilter').value;
+    const monthFilter = document.getElementById('monthFilter').value;
+    const yearFilter = document.getElementById('yearFilter').value;
+    
+    // Build date filter if month/year is selected
+    let dateFilter = {};
+    if (monthFilter !== 'all' || yearFilter !== 'all') {
+      const startDate = new Date(
+        yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
+        monthFilter !== 'all' ? monthFilter - 1 : 0,
+        1
+      );
+      
+      const endDate = new Date(
+        yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
+        monthFilter !== 'all' ? monthFilter : 11,
+        monthFilter !== 'all' ? 
+          new Date(yearFilter, monthFilter, 0).getDate() : 31,
+        23, 59, 59
+      );
+      
+      dateFilter = {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      };
+    }
+    
+    // Fetch data based on filters
+    let sales = [];
+    let expenses = [];
+    
+    if (typeFilter === 'all' || typeFilter === 'sale') {
+      const salesResponse = await fetch('/api/transactions?' + new URLSearchParams({
+        ...dateFilter,
+        type: 'sales'
+      }));
+      const salesResult = await salesResponse.json();
+      sales = salesResult.data?.sales || [];
+    }
+    
+    if (typeFilter === 'all' || typeFilter === 'expense') {
+      const expensesResponse = await fetch('/api/transactions?' + new URLSearchParams({
+        ...dateFilter,
+        type: 'expenses'
+      }));
+      const expensesResult = await expensesResponse.json();
+      expenses = expensesResult.data?.expenses || [];
+    }
+    
+    // Combine and sort transactions by date
+    const transactions = [...sales.map(s => ({ ...s, type: 'sale' })), ...expenses.map(e => ({ ...e, type: 'expense' }))]
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Render transactions
+    const tbody = document.querySelector('#transactionsTable tbody');
+    tbody.innerHTML = '';
+    
+    transactions.forEach(transaction => {
+      const row = document.createElement('tr');
+      
+      let details = '';
+      let badgeClass = '';
+      
+      if (transaction.type === 'sale') {
+        details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
+        badgeClass = 'badge-sale';
+      } else {
+        details = transaction.description || 'Expense';
+        badgeClass = 'badge-expense';
+      }
+      
+      row.innerHTML = `
+        <td>${new Date(transaction.date).toLocaleDateString()}</td>
+        <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
+        <td>${details}</td>
+        <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
+        <td>
+          <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+    
+    // Add event listeners to delete buttons
+    document.querySelectorAll('.delete-transaction').forEach(btn => {
+      btn.addEventListener('click', () => confirmDelete(btn.dataset.id, btn.dataset.type));
+    });
+    
+    // Update summary
+    updateSummary(sales, expenses);
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showAlert('Error loading transactions. Please try again.', 'danger');
+  }
+}
+
+// Update summary section
+function updateSummary(sales, expenses) {
+  const totalSheets = sales.reduce((sum, sale) => sum + sale.sheetsSold, 0);
+  const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalRevenue, 0);
+  const totalProductionCost = sales.reduce((sum, sale) => sum + (sale.sheetsSold * 47), 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const netProfit = totalRevenue - totalProductionCost - totalExpenses;
+  const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
+  
+  document.getElementById('report-sheets').textContent = totalSheets;
+  document.getElementById('report-revenue').textContent = `₹${totalRevenue}`;
+  document.getElementById('report-production').textContent = `₹${totalProductionCost}`;
+  document.getElementById('report-expenses').textContent = `₹${totalExpenses}`;
+  document.getElementById('report-profit').textContent = `₹${netProfit}`;
+  document.getElementById('report-margin').textContent = `${profitMargin}%`;
+}
+
+// Confirm Delete
+function confirmDelete(id, type) {
+  currentDeleteId = id;
+  currentDeleteType = type;
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+
+// Delete Record
+document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+  if (!currentDeleteId) return;
+  
+  try {
+    const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
+    const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
+      method: 'DELETE'
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showAlert('Record deleted successfully!', 'success');
+      document.getElementById('deleteModal').style.display = 'none';
+      updateDashboard();
+      loadTransactions();
+    } else {
+      throw new Error(result.message || 'Error deleting record');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showAlert(error.message || 'Error deleting record. Please try again.', 'danger');
+  }
+  
+  currentDeleteId = null;
+  currentDeleteType = null;
+});
+
+// Update Dashboard with period filter
+async function updateDashboard(period = 'daily') {
+  try {
+    // Show loading state
+    document.querySelectorAll('.dashboard .card .value').forEach(el => {
+      el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    });
+
+    // Calculate date ranges based on period
+    const { startDate, endDate } = getDateRange(period);
+    
+    // Fetch sales data
+    const salesResponse = await fetch(`/api/sales?startDate=${startDate}&endDate=${endDate}`);
+    const salesData = await salesResponse.json();
+    const sales = salesData.data || [];
+    
+    // Fetch expenses data
+    const expensesResponse = await fetch(`/api/expenses?startDate=${startDate}&endDate=${endDate}`);
+    const expensesData = await expensesResponse.json();
+    const expenses = expensesData.data || [];
+    
+    // Calculate metrics
+    const totalSheets = sales.reduce((sum, sale) => sum + (sale.sheetsSold || 0), 0);
+    const totalRevenue = sales.reduce((sum, sale) => sum + (sale.totalRevenue || 0), 0);
+    const totalProductionCost = totalSheets * 47; // ₹47 per sheet
+    const totalExpensesAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+    const netProfit = totalRevenue - totalProductionCost - totalExpensesAmount;
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
+    
+    // Update dashboard cards
+    document.getElementById('totalSales').textContent = `₹${totalRevenue.toLocaleString()}`;
+    document.getElementById('totalSheets').textContent = totalSheets.toLocaleString();
+    document.getElementById('totalExpenses').textContent = totalExpensesAmount.toLocaleString();
+    document.getElementById('expenseCount').textContent = expenses.length;
+    document.getElementById('totalProductionCost').textContent = totalProductionCost.toLocaleString();
+    document.getElementById('netProfit').textContent = netProfit.toLocaleString();
+    document.getElementById('profitMargin').textContent = profitMargin;
     
     // Update the dashboard title to show current filter
     const periodNames = {
@@ -596,41 +618,90 @@ async function updateDashboard(period = 'daily') {
     const dashboardTitle = document.querySelector('.dashboard h2') || document.createElement('h2');
     dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
     if (!document.querySelector('.dashboard h2')) {
-      dashboard.insertBefore(dashboardTitle, dashboard.firstChild);
+      document.querySelector('.dashboard').prepend(dashboardTitle);
     }
     
   } catch (error) {
     console.error('Error:', error);
     showAlert('Error loading dashboard data. Please try again.', 'danger');
+    
+    // Reset to default values on error
+    document.getElementById('totalSales').textContent = '₹0';
+    document.getElementById('totalSheets').textContent = '0';
+    document.getElementById('totalExpenses').textContent = '0';
+    document.getElementById('expenseCount').textContent = '0';
+    document.getElementById('totalProductionCost').textContent = '0';
+    document.getElementById('netProfit').textContent = '0';
+    document.getElementById('profitMargin').textContent = '0';
   }
 }
 
-// Update the initial dashboard load to use default period
-document.addEventListener('DOMContentLoaded', () => {
-  updateDashboard('daily'); // Default to daily view
+// Helper function to calculate date ranges
+function getDateRange(period) {
+  const now = new Date();
+  let startDate, endDate;
   
+  switch(period) {
+    case 'daily':
+      startDate = new Date(now.setHours(0, 0, 0, 0));
+      endDate = new Date(now.setHours(23, 59, 59, 999));
+      break;
+      
+    case 'weekly':
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+      startDate = new Date(now.setDate(diff));
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+      
+    case 'monthly':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+      
+    case 'yearly':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+      
+    case 'all':
+    default:
+      startDate = new Date(0); // Unix epoch start
+      endDate = new Date(); // Current date
+      break;
+  }
+  
+  return {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString()
+  };
+}
+
+// Show Alert
+function showAlert(message, type) {
+  alertBox.textContent = message;
+  alertBox.className = `alert alert-${type} show`;
+  
+  setTimeout(() => {
+    alertBox.classList.remove('show');
+  }, 3000);
+}
+
+// Initialize the dashboard with default filters
+document.addEventListener('DOMContentLoaded', () => {
   // Set current month and year in transactions filters
   const currentDate = new Date();
   document.getElementById('monthFilter').value = currentDate.getMonth() + 1;
   document.getElementById('yearFilter').value = currentDate.getFullYear();
-});
-    // Show Alert
-    function showAlert(message, type) {
-      alertBox.textContent = message;
-      alertBox.className = `alert alert-${type} show`;
-      
-      setTimeout(() => {
-        alertBox.classList.remove('show');
-      }, 3000);
-    }
-    
   
-      
-      // Set current month and year in filters
-      const currentDate = new Date();
-      document.getElementById('monthFilter').value = currentDate.getMonth() + 1;
-      document.getElementById('yearFilter').value = currentDate.getFullYear();
-    });
+  // Activate daily filter by default
+  document.querySelector('.filter-btn[data-period="daily"]').click();
+});
 </script>
 </body>
 </html>
