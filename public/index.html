@@ -403,7 +403,7 @@ document.getElementById('expenseDescription').addEventListener('change', functio
 
 // Dashboard Filter Functionality
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize dashboard with daily view
+  // Initialize dashboard with today's view
   updateDashboard('today');
   
   // Set up filter button event listeners
@@ -415,17 +415,11 @@ document.addEventListener('DOMContentLoaded', function() {
       // Add active class to clicked button
       this.classList.add('active');
       
-      // Map frontend period values to backend expected values
-      const periodMap = {
-        daily: 'today',
-        weekly: 'week',
-        monthly: 'month',
-        yearly: 'year',
-        all: 'all'
-      };
+      // Get the period from data attribute
+      const period = this.dataset.period;
       
       // Update dashboard with selected period
-      updateDashboard(periodMap[this.dataset.period]);
+      updateDashboard(period);
     });
   });
 });
@@ -718,8 +712,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('monthFilter').value = currentDate.getMonth() + 1;
   document.getElementById('yearFilter').value = currentDate.getFullYear();
   
-  // Activate daily filter by default
-  document.querySelector('.filter-btn[data-period="daily"]').click();
+  // Activate today filter by default
+  document.querySelector('.filter-btn[data-period="today"]').click();
 });
 </script>
 </body>
