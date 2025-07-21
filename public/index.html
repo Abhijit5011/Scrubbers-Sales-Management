@@ -1021,11 +1021,7 @@ document.getElementById('addExpenseBtn').addEventListener('click', function() {
 
 // Toggle other expense description
 document.getElementById('expenseDescription').addEventListener('change', function() {
-  if (this.value === 'Other') {
-    document.getElementById('otherExpenseContainer').style.display = 'block';
-  } else {
-    document.getElementById('otherExpenseContainer').style.display = 'none';
-  }
+  document.getElementById('otherExpenseContainer').style.display = this.value === 'Other' ? 'block' : 'none';
 });
 
 // Dashboard Filter Functionality
@@ -1036,23 +1032,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Set up filter button event listeners
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      // Remove active class from all buttons
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      
-      // Add active class to clicked button
       this.classList.add('active');
-      
-      // Map frontend period values to backend expected values
-      const periodMap = {
-        daily: 'today',
-        weekly: 'week',
-        monthly: 'month',
-        yearly: 'year',
-        all: 'all'
-      };
-      
-      // Update dashboard with selected period
-      updateDashboard(periodMap[this.dataset.period]);
+      updateDashboard(this.dataset.period);
     });
   });
 });
@@ -1068,154 +1050,98 @@ salesForm.addEventListener('submit', async function(e) {
   };
   
   try {
-    const response = await fetch('/api/sales', {
+    await fetch('/api/sales', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(saleData)
     });
     
-    const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.message || 'Error saving sale data');
-    }
-    
-    // Check if expense is added
     if (document.getElementById('expenseSection').style.display === 'block') {
-      const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
-        ? document.getElementById('otherExpenseDesc').value 
-        : document.getElementById('expenseDescription').value;
-        
-      const expenseType = expenseDesc.toLowerCase() === 'petrol' ? 'petrol' : 'other';
-      
       const expenseData = {
         date: this.saleDate.value,
-        type: expenseType,
+        type: document.getElementById('expenseDescription').value,
         amount: parseInt(document.getElementById('expenseAmount').value),
-        description: expenseDesc
+        description: document.getElementById('expenseDescription').value === 'Other' 
+          ? document.getElementById('otherExpenseDesc').value 
+          : document.getElementById('expenseDescription').value
       };
       
-      const expenseResponse = await fetch('/api/expenses', {
+      await fetch('/api/expenses', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(expenseData)
       });
-      
-      const expenseResult = await expenseResponse.json();
-      
-      if (!expenseResult.success) {
-        throw new Error(expenseResult.message || 'Error saving expense data');
-      }
     }
     
     showAlert('Transaction saved successfully!', 'success');
     this.reset();
     this.saleDate.value = todayDate;
     document.getElementById('expenseSection').style.display = 'none';
-    document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
     updateDashboard();
     loadTransactions();
   } catch (error) {
-    console.error('Error:', error);
-    showAlert(error.message || 'Error saving data. Please try again.', 'danger');
+    showAlert('Error saving data. Please try again.', 'danger');
   }
 });
 
-// Filter Transactions
-document.getElementById('filterBtn').addEventListener('click', loadTransactions);
-
 // Load transactions with filters
 async function loadTransactions() {
+  const typeFilter = document.getElementById('transactionTypeFilter').value;
+  const monthFilter = document.getElementById('monthFilter').value;
+  const yearFilter = document.getElementById('yearFilter').value;
+  
+  let queryParams = [];
+  
+  if (monthFilter !== 'all' || yearFilter !== 'all') {
+    const startDate = new Date(yearFilter, monthFilter - 1, 1); // Start of the selected month
+    const endDate = new Date(yearFilter, monthFilter, 0, 23, 59, 59); // Last day of the selected month
+    queryParams.push(`startDate=${startDate.toISOString()}`);
+    queryParams.push(`endDate=${endDate.toISOString()}`);
+  }
+  
+  if (typeFilter !== 'all') {
+    queryParams.push(`type=${typeFilter === 'sale' ? 'sales' : 'expenses'}`);
+  }
+  
   try {
-    const typeFilter = document.getElementById('transactionTypeFilter').value;
-    const monthFilter = document.getElementById('monthFilter').value;
-    const yearFilter = document.getElementById('yearFilter').value;
-    
-    // Build date filter if month/year is selected
-    let queryParams = [];
-    
-    if (monthFilter !== 'all' || yearFilter !== 'all') {
-      const startDate = new Date(
-        yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
-        monthFilter !== 'all' ? monthFilter - 1 : 0,
-        1
-      );
-      
-      const endDate = new Date(
-        yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
-        monthFilter !== 'all' ? monthFilter : 11,
-        monthFilter !== 'all' ? 
-          new Date(yearFilter, monthFilter, 0).getDate() : 31,
-        23, 59, 59
-      );
-      
-      queryParams.push(`startDate=${startDate.toISOString()}`);
-      queryParams.push(`endDate=${endDate.toISOString()}`);
-    }
-    
-    if (typeFilter !== 'all') {
-      queryParams.push(`type=${typeFilter === 'sale' ? 'sales' : 'expenses'}`);
-    }
-    
-    // Fetch transactions
     const response = await fetch(`/api/transactions?${queryParams.join('&')}`);
     const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to load transactions');
-    }
     
     const transactions = [
       ...(result.data.sales?.map(s => ({ ...s, type: 'sale' })) || []),
       ...(result.data.expenses?.map(e => ({ ...e, type: 'expense' })) || [])
     ].sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    // Render transactions
-    const tbody = document.querySelector('#transactionsTable tbody');
-    tbody.innerHTML = '';
-    
-    transactions.forEach(transaction => {
-      const row = document.createElement('tr');
-      
-      let details = '';
-      let badgeClass = '';
-      
-      if (transaction.type === 'sale') {
-        details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
-        badgeClass = 'badge-sale';
-      } else {
-        details = transaction.description || 'Expense';
-        badgeClass = 'badge-expense';
-      }
-      
-      row.innerHTML = `
-        <td>${new Date(transaction.date).toLocaleDateString()}</td>
-        <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
-        <td>${details}</td>
-        <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
-        <td>
-          <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-    
-    // Add event listeners to delete buttons
-    document.querySelectorAll('.delete-transaction').forEach(btn => {
-      btn.addEventListener('click', () => confirmDelete(btn.dataset.id, btn.dataset.type));
-    });
-    
-    // Update summary
+    renderTransactions(transactions);
     updateSummary(result.data.sales || [], result.data.expenses || []);
-    
   } catch (error) {
-    console.error('Error:', error);
     showAlert('Error loading transactions. Please try again.', 'danger');
   }
+}
+
+
+// Render transactions
+function renderTransactions(transactions) {
+  const tbody = document.querySelector('#transactionsTable tbody');
+  tbody.innerHTML = '';
+  
+  transactions.forEach(transaction => {
+    const row = document.createElement('tr');
+    const details = transaction.type === 'sale' 
+      ? `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue / transaction.sheetsSold).toFixed(2)}`
+      : transaction.description || 'Expense';
+    
+    row.innerHTML = `
+      <td>${new Date(transaction.date).toLocaleDateString()}</td>
+      <td><span class="badge ${transaction.type === 'sale' ? 'badge-sale' : 'badge-expense'}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
+      <td>${details}</td>
+      <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
+      <td>
+        <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
 }
 
 // Update summary section
@@ -1248,23 +1174,13 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   
   try {
     const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
-    const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
-      method: 'DELETE'
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      showAlert('Record deleted successfully!', 'success');
-      document.getElementById('deleteModal').style.display = 'none';
-      updateDashboard();
-      loadTransactions();
-    } else {
-      throw new Error(result.message || 'Error deleting record');
-    }
+    await fetch(`/api/${endpoint}/${currentDeleteId}`, { method: 'DELETE' });
+    showAlert('Record deleted successfully!', 'success');
+    document.getElementById('deleteModal').style.display = 'none';
+    updateDashboard();
+    loadTransactions();
   } catch (error) {
-    console.error('Error:', error);
-    showAlert(error.message || 'Error deleting record. Please try again.', 'danger');
+    showAlert('Error deleting record. Please try again.', 'danger');
   }
   
   currentDeleteId = null;
@@ -1274,54 +1190,27 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 // Update Dashboard with period filter
 async function updateDashboard(period = 'today') {
   try {
-    // Show loading state
     document.querySelectorAll('.dashboard .card .value').forEach(el => {
       el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     });
 
-    // Fetch summary data
     const response = await fetch(`/api/summary?period=${period}`);
     const result = await response.json();
     
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to load dashboard data');
-    }
-    
-    const data = result.data;
-    
-    // Update dashboard cards
-    document.getElementById('totalSales').textContent = `₹${data.totalRevenue?.toLocaleString() || 0}`;
-    document.getElementById('totalSheets').textContent = data.totalSheets?.toLocaleString() || 0;
-    document.getElementById('totalExpenses').textContent = (data.totalPetrol + data.totalOtherExpenses)?.toLocaleString() || 0;
-    document.getElementById('expenseCount').textContent = 'N/A'; // Not available in summary
-    document.getElementById('totalProductionCost').textContent = data.totalProductionCost?.toLocaleString() || 0;
-    document.getElementById('netProfit').textContent = data.netProfit?.toLocaleString() || 0;
-    document.getElementById('profitMargin').textContent = data.profitMargin || 0;
-    
-    // Update the dashboard title to show current filter
-    const periodNames = {
-      today: 'Today',
-      week: 'This Week',
-      month: 'This Month',
-      year: 'This Year',
-      all: 'All Time'
-    };
-    
-    const dashboardTitle = document.querySelector('.dashboard h2') || document.createElement('h2');
-    dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
-    if (!document.querySelector('.dashboard h2')) {
-      document.querySelector('.dashboard').prepend(dashboardTitle);
-    }
+    document.getElementById('totalSales').textContent = `₹${result.data.totalRevenue?.toLocaleString() || 0}`;
+    document.getElementById('totalSheets').textContent = result.data.totalSheets?.toLocaleString() || 0;
+    document.getElementById('totalExpenses').textContent = (result.data.totalPetrol + result.data.totalOtherExpenses)?.toLocaleString() || 0;
+    document.getElementById('totalProductionCost').textContent = result.data.totalProductionCost?.toLocaleString() || 0;
+    document.getElementById('netProfit').textContent = result.data.netProfit?.toLocaleString() || 0;
+    document.getElementById('profitMargin').textContent = result.data.profitMargin || 0;
     
   } catch (error) {
-    console.error('Error:', error);
     showAlert('Error loading dashboard data. Please try again.', 'danger');
     
     // Reset to default values on error
     document.getElementById('totalSales').textContent = '₹0';
     document.getElementById('totalSheets').textContent = '0';
     document.getElementById('totalExpenses').textContent = '0';
-    document.getElementById('expenseCount').textContent = '0';
     document.getElementById('totalProductionCost').textContent = '0';
     document.getElementById('netProfit').textContent = '0';
     document.getElementById('profitMargin').textContent = '0';
@@ -1340,14 +1229,12 @@ function showAlert(message, type) {
 
 // Initialize the dashboard with default filters
 document.addEventListener('DOMContentLoaded', () => {
-  // Set current month and year in transactions filters
   const currentDate = new Date();
   document.getElementById('monthFilter').value = currentDate.getMonth() + 1;
   document.getElementById('yearFilter').value = currentDate.getFullYear();
-  
-  // Activate daily filter by default
   document.querySelector('.filter-btn[data-period="daily"]').click();
 });
+
 </script>
 </body>
 </html>
