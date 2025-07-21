@@ -23,15 +23,26 @@
         <span id="current-date"></span>
       </div>
     </header>
-    
-    <!-- Time Period Selector -->
-    <div class="period-selector">
-      <button class="period-btn active" data-period="daily">Today</button>
-      <button class="period-btn" data-period="weekly">This Week</button>
-      <button class="period-btn" data-period="monthly">This Month</button>
-      <button class="period-btn" data-period="yearly">This Year</button>
-      <button class="period-btn" data-period="all">All Time</button>
-    </div>
+
+    <div class="dashboard-filter">
+  <div class="filter-options">
+    <button class="filter-btn active" data-period="daily">
+      <i class="fas fa-calendar-day"></i> Daily
+    </button>
+    <button class="filter-btn" data-period="weekly">
+      <i class="fas fa-calendar-week"></i> Weekly
+    </button>
+    <button class="filter-btn" data-period="monthly">
+      <i class="fas fa-calendar-alt"></i> Monthly
+    </button>
+    <button class="filter-btn" data-period="yearly">
+      <i class="fas fa-calendar"></i> Yearly
+    </button>
+    <button class="filter-btn" data-period="all">
+      <i class="fas fa-infinity"></i> All Time
+    </button>
+  </div>
+</div>
     
     <div class="dashboard">
       <div class="card">
@@ -40,7 +51,11 @@
         <div class="subtext"><i class="fas fa-boxes"></i> <span id="totalSheets">0</span> sheets sold</div>
       </div>
       
-      
+      <div class="card">
+        <h3><i class="fas fa-money-bill-wave"></i> Total Expenses</h3>
+        <div class="value">₹<span id="totalExpenses">0</span></div>
+        <div class="subtext"><i class="fas fa-list"></i> <span id="expenseCount">0</span> expenses</div>
+      </div>
       
       <div class="card production">
         <h3><i class="fas fa-industry"></i> Production Cost</h3>
@@ -54,12 +69,6 @@
         <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
       </div>
     </div>
-
-    <div class="card">
-        <h3><i class="fas fa-money-bill-wave"></i> Total Expenses</h3>
-        <div class="value">₹<span id="totalExpenses">0</span></div>
-        <div class="subtext"><i class="fas fa-list"></i> <span id="expenseCount">0</span> expenses</div>
-      </div>
     
     <div class="tabs-container">
       <div class="tabs">
@@ -157,6 +166,7 @@
           
           <div class="form-group">
             <button id="filterBtn" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filter</button>
+            <button id="downloadBtn" class="btn btn-success"><i class="fas fa-download"></i> Download</button>
           </div>
         </div>
         
@@ -236,7 +246,6 @@
       </div>
     </div>
   </div>
-
 <script>
     // DOM Elements
     const tabs = document.querySelectorAll('.tab');
@@ -245,8 +254,6 @@
     const salesForm = document.getElementById('salesForm');
     const todayDate = new Date().toISOString().split('T')[0];
     let currentDeleteId = null;
-    let currentDeleteType = null;
-    let currentPeriod = 'daily'; // Default to daily view
     
     // Set current date
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
@@ -291,17 +298,6 @@
       });
     });
     
-    // Period selector
-    const periodBtns = document.querySelectorAll('.period-btn');
-    periodBtns.forEach(btn => {
-      btn.addEventListener('click', function() {
-        periodBtns.forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        currentPeriod = this.dataset.period;
-        updateDashboard();
-      });
-    });
-    
     // Toggle expense section
     document.getElementById('addExpenseBtn').addEventListener('click', function() {
       const expenseSection = document.getElementById('expenseSection');
@@ -331,49 +327,68 @@
     salesForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      const formData = {
+      const saleData = {
         date: this.saleDate.value,
         sheetsSold: parseInt(this.sheetsSold.value) || 0,
-        amount: parseInt(this.totalAmount.value)
+        totalRevenue: parseInt(this.totalAmount.value)
       };
       
-      // Check if expense is added
-      if (document.getElementById('expenseSection').style.display === 'block') {
-        const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
-          ? document.getElementById('otherExpenseDesc').value 
-          : document.getElementById('expenseDescription').value;
-          
-        formData.expense = {
-          amount: parseInt(document.getElementById('expenseAmount').value),
-          description: expenseDesc
-        };
-      }
-      
       try {
-        const response = await fetch('/api/transactions', {
+        // Save sale first
+        const saleResponse = await fetch('/api/sales', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(saleData)
         });
         
-        const result = await response.json();
+        const saleResult = await saleResponse.json();
         
-        if (result.success) {
-          showAlert('Transaction saved successfully!', 'success');
-          this.reset();
-          this.saleDate.value = todayDate;
-          document.getElementById('expenseSection').style.display = 'none';
-          document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error saving data', 'danger');
+        if (!saleResult.success) {
+          throw new Error(saleResult.message || 'Error saving sale data');
         }
+        
+        // Check if expense is added
+        if (document.getElementById('expenseSection').style.display === 'block') {
+          const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
+            ? document.getElementById('otherExpenseDesc').value 
+            : document.getElementById('expenseDescription').value;
+            
+          const expenseType = expenseDesc.toLowerCase() === 'petrol' ? 'petrol' : 'other';
+          
+          const expenseData = {
+            date: this.saleDate.value,
+            type: expenseType,
+            amount: parseInt(document.getElementById('expenseAmount').value),
+            description: expenseDesc
+          };
+          
+          const expenseResponse = await fetch('/api/expenses', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(expenseData)
+          });
+          
+          const expenseResult = await expenseResponse.json();
+          
+          if (!expenseResult.success) {
+            throw new Error(expenseResult.message || 'Error saving expense data');
+          }
+        }
+        
+        showAlert('Transaction saved successfully!', 'success');
+        this.reset();
+        this.saleDate.value = todayDate;
+        document.getElementById('expenseSection').style.display = 'none';
+        document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
+        updateDashboard();
+        loadTransactions();
       } catch (error) {
         console.error('Error:', error);
-        showAlert('Error saving data. Please try again.', 'danger');
+        showAlert(error.message || 'Error saving data. Please try again.', 'danger');
       }
     });
     
@@ -387,49 +402,84 @@
         const monthFilter = document.getElementById('monthFilter').value;
         const yearFilter = document.getElementById('yearFilter').value;
         
-        let url = '/api/transactions?';
-        if (typeFilter !== 'all') url += `type=${typeFilter}&`;
-        if (monthFilter !== 'all') url += `month=${monthFilter}&`;
-        if (yearFilter !== 'all') url += `year=${yearFilter}&`;
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load transactions');
+        // Build date filter if month/year is selected
+        let dateFilter = {};
+        if (monthFilter !== 'all' || yearFilter !== 'all') {
+          const startDate = new Date(
+            yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
+            monthFilter !== 'all' ? monthFilter - 1 : 0,
+            1
+          );
+          
+          const endDate = new Date(
+            yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
+            monthFilter !== 'all' ? monthFilter : 11,
+            monthFilter !== 'all' ? 
+              new Date(yearFilter, monthFilter, 0).getDate() : 31,
+            23, 59, 59
+          );
+          
+          dateFilter = {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+          };
         }
         
+        // Fetch data based on filters
+        let sales = [];
+        let expenses = [];
+        
+        if (typeFilter === 'all' || typeFilter === 'sale') {
+          const salesResponse = await fetch('/api/transactions?' + new URLSearchParams({
+            ...dateFilter,
+            type: 'sales'
+          }));
+          const salesResult = await salesResponse.json();
+          sales = salesResult.data?.sales || [];
+        }
+        
+        if (typeFilter === 'all' || typeFilter === 'expense') {
+          const expensesResponse = await fetch('/api/transactions?' + new URLSearchParams({
+            ...dateFilter,
+            type: 'expenses'
+          }));
+          const expensesResult = await expensesResponse.json();
+          expenses = expensesResult.data?.expenses || [];
+        }
+        
+        // Combine and sort transactions by date
+        const transactions = [...sales.map(s => ({ ...s, type: 'sale' })), ...expenses.map(e => ({ ...e, type: 'expense' }))]
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Render transactions
         const tbody = document.querySelector('#transactionsTable tbody');
         tbody.innerHTML = '';
         
-        // Process transactions
-        if (result.data.transactions) {
-          result.data.transactions.forEach(transaction => {
-            const row = document.createElement('tr');
-            
-            let details = '';
-            let badgeClass = '';
-            
-            if (transaction.type === 'sale') {
-              details = `${transaction.sheetsSold} sheets @ ₹${(transaction.amount/transaction.sheetsSold).toFixed(2)}`;
-              badgeClass = 'badge-sale';
-            } else {
-              details = transaction.description || 'Expense';
-              badgeClass = 'badge-expense';
-            }
-            
-            row.innerHTML = `
-              <td>${new Date(transaction.date).toLocaleDateString()}</td>
-              <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
-              <td>${details}</td>
-              <td>₹${transaction.amount}</td>
-              <td>
-                <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
-              </td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
+        transactions.forEach(transaction => {
+          const row = document.createElement('tr');
+          
+          let details = '';
+          let badgeClass = '';
+          
+          if (transaction.type === 'sale') {
+            details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
+            badgeClass = 'badge-sale';
+          } else {
+            details = transaction.description || 'Expense';
+            badgeClass = 'badge-expense';
+          }
+          
+          row.innerHTML = `
+            <td>${new Date(transaction.date).toLocaleDateString()}</td>
+            <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
+            <td>${details}</td>
+            <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
+            <td>
+              <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
         
         // Add event listeners to delete buttons
         document.querySelectorAll('.delete-transaction').forEach(btn => {
@@ -437,20 +487,29 @@
         });
         
         // Update summary
-        if (result.data.summary) {
-          const summary = result.data.summary;
-          document.getElementById('report-sheets').textContent = summary.totalSheets || 0;
-          document.getElementById('report-revenue').textContent = `₹${summary.totalRevenue || 0}`;
-          document.getElementById('report-production').textContent = `₹${summary.totalProductionCost || 0}`;
-          document.getElementById('report-expenses').textContent = `₹${summary.totalExpenses || 0}`;
-          document.getElementById('report-profit').textContent = `₹${summary.netProfit || 0}`;
-          document.getElementById('report-margin').textContent = summary.profitMargin ? `${summary.profitMargin}%` : '0%';
-        }
+        updateSummary(sales, expenses);
         
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error loading transactions. Please try again.', 'danger');
       }
+    }
+    
+    // Update summary section
+    function updateSummary(sales, expenses) {
+      const totalSheets = sales.reduce((sum, sale) => sum + sale.sheetsSold, 0);
+      const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalRevenue, 0);
+      const totalProductionCost = sales.reduce((sum, sale) => sum + (sale.sheetsSold * 47), 0);
+      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const netProfit = totalRevenue - totalProductionCost - totalExpenses;
+      const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
+      
+      document.getElementById('report-sheets').textContent = totalSheets;
+      document.getElementById('report-revenue').textContent = `₹${totalRevenue}`;
+      document.getElementById('report-production').textContent = `₹${totalProductionCost}`;
+      document.getElementById('report-expenses').textContent = `₹${totalExpenses}`;
+      document.getElementById('report-profit').textContent = `₹${netProfit}`;
+      document.getElementById('report-margin').textContent = `${profitMargin}%`;
     }
     
     // Confirm Delete
@@ -462,7 +521,7 @@
     
     // Delete Record
     document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-      if (!currentDeleteId || !currentDeleteType) return;
+      if (!currentDeleteId) return;
       
       try {
         const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
@@ -478,52 +537,101 @@
           updateDashboard();
           loadTransactions();
         } else {
-          showAlert(result.message || 'Error deleting record', 'danger');
+          throw new Error(result.message || 'Error deleting record');
         }
       } catch (error) {
         console.error('Error:', error);
-        showAlert('Error deleting record. Please try again.', 'danger');
+        showAlert(error.message || 'Error deleting record. Please try again.', 'danger');
       }
       
       currentDeleteId = null;
       currentDeleteType = null;
     });
     
-    // Update Dashboard
-    async function updateDashboard() {
-      try {
-        const response = await fetch(`/api/summary?period=${currentPeriod}`);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load dashboard data');
-        }
-        
-        const data = result.data;
-        
-        // Update summary cards
-        document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
-        document.getElementById('totalSheets').textContent = data.totalSheets || 0;
-        document.getElementById('totalExpenses').textContent = data.totalExpenses || 0;
-        document.getElementById('expenseCount').textContent = data.expenseCount || 0;
-        document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
-        
-        // For daily view, don't subtract expenses from profit
-        if (currentPeriod === 'daily') {
-          document.getElementById('netProfit').textContent = data.totalRevenue ? `₹${data.totalRevenue - data.totalProductionCost}` : '₹0';
-          const margin = data.totalRevenue ? ((data.totalRevenue - data.totalProductionCost) / data.totalRevenue * 100).toFixed(2) : 0;
-          document.getElementById('profitMargin').textContent = margin;
-        } else {
-          document.getElementById('netProfit').textContent = data.netProfit || 0;
-          document.getElementById('profitMargin').textContent = data.profitMargin || 0;
-        }
-        
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading dashboard data. Please try again.', 'danger');
-      }
+    // Add this to your existing JavaScript code
+
+// Dashboard Filter Elements
+const dashboardFilterContainer = document.createElement('div');
+dashboardFilterContainer.className = 'dashboard-filter';
+dashboardFilterContainer.innerHTML = `
+  <div class="filter-options">
+    <button class="filter-btn active" data-period="daily">Daily</button>
+    <button class="filter-btn" data-period="weekly">Weekly</button>
+    <button class="filter-btn" data-period="monthly">Monthly</button>
+    <button class="filter-btn" data-period="yearly">Yearly</button>
+    <button class="filter-btn" data-period="all">All Time</button>
+  </div>
+`;
+
+// Insert the filter container just before the dashboard
+const dashboard = document.querySelector('.dashboard');
+dashboard.parentNode.insertBefore(dashboardFilterContainer, dashboard);
+
+// Dashboard Filter Functionality
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    // Remove active class from all buttons
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    
+    // Add active class to clicked button
+    this.classList.add('active');
+    
+    // Update dashboard with selected period
+    updateDashboard(this.dataset.period);
+  });
+});
+
+// Modified updateDashboard function to accept period parameter
+async function updateDashboard(period = 'daily') {
+  try {
+    const response = await fetch(`/api/summary?period=${period}`);
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to load dashboard data');
     }
     
+    const data = result.data;
+    
+    // Update summary cards
+    document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
+    document.getElementById('totalSheets').textContent = data.totalSheets || 0;
+    document.getElementById('totalExpenses').textContent = data.totalPetrol + data.totalOtherExpenses || 0;
+    document.getElementById('expenseCount').textContent = data.expenseCount || 'N/A';
+    document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
+    document.getElementById('netProfit').textContent = data.netProfit || 0;
+    document.getElementById('profitMargin').textContent = data.profitMargin || 0;
+    
+    // Update the dashboard title to show current filter
+    const periodNames = {
+      daily: 'Today',
+      weekly: 'This Week',
+      monthly: 'This Month',
+      yearly: 'This Year',
+      all: 'All Time'
+    };
+    
+    const dashboardTitle = document.querySelector('.dashboard h2') || document.createElement('h2');
+    dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
+    if (!document.querySelector('.dashboard h2')) {
+      dashboard.insertBefore(dashboardTitle, dashboard.firstChild);
+    }
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showAlert('Error loading dashboard data. Please try again.', 'danger');
+  }
+}
+
+// Update the initial dashboard load to use default period
+document.addEventListener('DOMContentLoaded', () => {
+  updateDashboard('daily'); // Default to daily view
+  
+  // Set current month and year in transactions filters
+  const currentDate = new Date();
+  document.getElementById('monthFilter').value = currentDate.getMonth() + 1;
+  document.getElementById('yearFilter').value = currentDate.getFullYear();
+});
     // Show Alert
     function showAlert(message, type) {
       alertBox.textContent = message;
@@ -537,7 +645,6 @@
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', () => {
       updateDashboard();
-      loadTransactions();
       
       // Set current month and year in filters
       const currentDate = new Date();
@@ -620,33 +727,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-    
-    .period-selector {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    
-    .period-btn {
-      padding: 8px 20px;
-      border-radius: 50px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 0.9rem;
-    }
-    
-    .period-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-    
-    .period-btn:hover:not(.active) {
-      background: #f8fafc;
     }
     
     .dashboard {
@@ -972,43 +1052,54 @@
       gap: 10px;
     }
     
-  .summary-card {
+   .summary-card {
   background: white;
-  padding: 25px;
+  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
   margin-bottom: 30px;
   width: 100%;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Ensures padding is included in width */
 }
 
-
 .summary-card h3 {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   color: var(--dark);
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-  font-size: 1.2rem;
+  font-size: 1.1rem; /* Relative font size */
 }
 
-
-@media (max-width: 600px) {
+/* Mobile responsiveness */
+@media (max-width: 768px) {
   .summary-card {
     padding: 15px;
     margin-bottom: 20px;
+  border-radius: 8px;
   }
-
+  
   .summary-card h3 {
     font-size: 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+    flex-wrap: wrap; /* Allows items to wrap if needed */
+    gap: 8px;
+    margin-bottom: 12px;
   }
 }
 
+/* Very small screens */
+@media (max-width: 480px) {
+  .summary-card {
+    padding: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .summary-card h3 {
+    font-size: 0.95rem;
+  }
+}
+    
     .period-selector {
       display: flex;
       gap: 10px;
@@ -1087,7 +1178,6 @@
       display: none;
     }
     
-    
     /* Alert styles */
     .alert {
       position: fixed;
@@ -1160,6 +1250,83 @@
         grid-template-columns: 1fr;
       }
     }
+
+  /* Dashboard Filters */
+.dashboard-filter {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.filter-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #4a5568;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.filter-btn i {
+  font-size: 14px;
+}
+
+.filter-btn:hover {
+  background: #edf2f7;
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: #4299e1;
+  color: white;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+}
+
+.filter-btn.active:hover {
+  background: #3182ce;
+  transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .filter-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-filter {
+    padding: 10px;
+  }
+  
+  .filter-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
   </style>
 </body>
 </html>
