@@ -24,25 +24,7 @@
       </div>
     </header>
 
-    <div class="dashboard-filter">
-  <div class="filter-options">
-    <button class="filter-btn active" data-period="daily">
-      <i class="fas fa-calendar-day"></i> Daily
-    </button>
-    <button class="filter-btn" data-period="weekly">
-      <i class="fas fa-calendar-week"></i> Weekly
-    </button>
-    <button class="filter-btn" data-period="monthly">
-      <i class="fas fa-calendar-alt"></i> Monthly
-    </button>
-    <button class="filter-btn" data-period="yearly">
-      <i class="fas fa-calendar"></i> Yearly
-    </button>
-    <button class="filter-btn" data-period="all">
-      <i class="fas fa-infinity"></i> All Time
-    </button>
-  </div>
-</div>
+
     
     <div class="dashboard">
       <div class="card">
@@ -642,9 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 3000);
     }
     
-    // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', () => {
-      updateDashboard();
+  
       
       // Set current month and year in filters
       const currentDate = new Date();
