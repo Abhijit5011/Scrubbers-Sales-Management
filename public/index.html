@@ -130,7 +130,7 @@
             <label for="transactionTypeFilter"><i class="fas fa-filter"></i> Transaction Type</label>
             <select id="transactionTypeFilter">
               <option value="all">All Transactions</option>
-              <option value="sale">Sales Only</option>
+              <option value="sale" selected>Sales Only</option>
               <option value="expense">Expenses Only</option>
             </select>
           </div>
@@ -220,7 +220,7 @@
 
 <style>
 .summary-card {
-  font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+  font-family:'Poppins', sans-serif ;
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -404,7 +404,7 @@ document.getElementById('expenseDescription').addEventListener('change', functio
 // Dashboard Filter Functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize dashboard with daily view
-  updateDashboard('daily');
+  updateDashboard('today');
   
   // Set up filter button event listeners
   document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -415,8 +415,17 @@ document.addEventListener('DOMContentLoaded', function() {
       // Add active class to clicked button
       this.classList.add('active');
       
+      // Map frontend period values to backend expected values
+      const periodMap = {
+        daily: 'today',
+        weekly: 'week',
+        monthly: 'month',
+        yearly: 'year',
+        all: 'all'
+      };
+      
       // Update dashboard with selected period
-      updateDashboard(this.dataset.period);
+      updateDashboard(periodMap[this.dataset.period]);
     });
   });
 });
@@ -636,7 +645,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 });
 
 // Update Dashboard with period filter
-async function updateDashboard(period = 'daily') {
+async function updateDashboard(period = 'today') {
   try {
     // Show loading state
     document.querySelectorAll('.dashboard .card .value').forEach(el => {
@@ -664,10 +673,10 @@ async function updateDashboard(period = 'daily') {
     
     // Update the dashboard title to show current filter
     const periodNames = {
-      daily: 'Today',
-      weekly: 'This Week',
-      monthly: 'This Month',
-      yearly: 'This Year',
+      today: 'Today',
+      week: 'This Week',
+      month: 'This Month',
+      year: 'This Year',
       all: 'All Time'
     };
     
