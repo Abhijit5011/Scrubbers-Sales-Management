@@ -226,7 +226,6 @@
       </div>
     </div>
   </div>
-
 <script>
     // DOM Elements
     const tabs = document.querySelectorAll('.tab');
@@ -235,7 +234,6 @@
     const salesForm = document.getElementById('salesForm');
     const todayDate = new Date().toISOString().split('T')[0];
     let currentDeleteId = null;
-    let currentDeleteType = null;
     
     // Set current date
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
@@ -309,49 +307,68 @@
     salesForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      const formData = {
+      const saleData = {
         date: this.saleDate.value,
         sheetsSold: parseInt(this.sheetsSold.value) || 0,
-        amount: parseInt(this.totalAmount.value)
+        totalRevenue: parseInt(this.totalAmount.value)
       };
       
-      // Check if expense is added
-      if (document.getElementById('expenseSection').style.display === 'block') {
-        const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
-          ? document.getElementById('otherExpenseDesc').value 
-          : document.getElementById('expenseDescription').value;
-          
-        formData.expense = {
-          amount: parseInt(document.getElementById('expenseAmount').value),
-          description: expenseDesc
-        };
-      }
-      
       try {
-        const response = await fetch('/api/transactions', {
+        // Save sale first
+        const saleResponse = await fetch('/api/sales', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(saleData)
         });
         
-        const result = await response.json();
+        const saleResult = await saleResponse.json();
         
-        if (result.success) {
-          showAlert('Transaction saved successfully!', 'success');
-          this.reset();
-          this.saleDate.value = todayDate;
-          document.getElementById('expenseSection').style.display = 'none';
-          document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error saving data', 'danger');
+        if (!saleResult.success) {
+          throw new Error(saleResult.message || 'Error saving sale data');
         }
+        
+        // Check if expense is added
+        if (document.getElementById('expenseSection').style.display === 'block') {
+          const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
+            ? document.getElementById('otherExpenseDesc').value 
+            : document.getElementById('expenseDescription').value;
+            
+          const expenseType = expenseDesc.toLowerCase() === 'petrol' ? 'petrol' : 'other';
+          
+          const expenseData = {
+            date: this.saleDate.value,
+            type: expenseType,
+            amount: parseInt(document.getElementById('expenseAmount').value),
+            description: expenseDesc
+          };
+          
+          const expenseResponse = await fetch('/api/expenses', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(expenseData)
+          });
+          
+          const expenseResult = await expenseResponse.json();
+          
+          if (!expenseResult.success) {
+            throw new Error(expenseResult.message || 'Error saving expense data');
+          }
+        }
+        
+        showAlert('Transaction saved successfully!', 'success');
+        this.reset();
+        this.saleDate.value = todayDate;
+        document.getElementById('expenseSection').style.display = 'none';
+        document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
+        updateDashboard();
+        loadTransactions();
       } catch (error) {
         console.error('Error:', error);
-        showAlert('Error saving data. Please try again.', 'danger');
+        showAlert(error.message || 'Error saving data. Please try again.', 'danger');
       }
     });
     
@@ -365,49 +382,84 @@
         const monthFilter = document.getElementById('monthFilter').value;
         const yearFilter = document.getElementById('yearFilter').value;
         
-        let url = '/api/transactions?';
-        if (typeFilter !== 'all') url += `type=${typeFilter}&`;
-        if (monthFilter !== 'all') url += `month=${monthFilter}&`;
-        if (yearFilter !== 'all') url += `year=${yearFilter}&`;
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load transactions');
+        // Build date filter if month/year is selected
+        let dateFilter = {};
+        if (monthFilter !== 'all' || yearFilter !== 'all') {
+          const startDate = new Date(
+            yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
+            monthFilter !== 'all' ? monthFilter - 1 : 0,
+            1
+          );
+          
+          const endDate = new Date(
+            yearFilter !== 'all' ? yearFilter : new Date().getFullYear(),
+            monthFilter !== 'all' ? monthFilter : 11,
+            monthFilter !== 'all' ? 
+              new Date(yearFilter, monthFilter, 0).getDate() : 31,
+            23, 59, 59
+          );
+          
+          dateFilter = {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+          };
         }
         
+        // Fetch data based on filters
+        let sales = [];
+        let expenses = [];
+        
+        if (typeFilter === 'all' || typeFilter === 'sale') {
+          const salesResponse = await fetch('/api/transactions?' + new URLSearchParams({
+            ...dateFilter,
+            type: 'sales'
+          }));
+          const salesResult = await salesResponse.json();
+          sales = salesResult.data?.sales || [];
+        }
+        
+        if (typeFilter === 'all' || typeFilter === 'expense') {
+          const expensesResponse = await fetch('/api/transactions?' + new URLSearchParams({
+            ...dateFilter,
+            type: 'expenses'
+          }));
+          const expensesResult = await expensesResponse.json();
+          expenses = expensesResult.data?.expenses || [];
+        }
+        
+        // Combine and sort transactions by date
+        const transactions = [...sales.map(s => ({ ...s, type: 'sale' })), ...expenses.map(e => ({ ...e, type: 'expense' }))]
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Render transactions
         const tbody = document.querySelector('#transactionsTable tbody');
         tbody.innerHTML = '';
         
-        // Process transactions
-        if (result.data.transactions) {
-          result.data.transactions.forEach(transaction => {
-            const row = document.createElement('tr');
-            
-            let details = '';
-            let badgeClass = '';
-            
-            if (transaction.type === 'sale') {
-              details = `${transaction.sheetsSold} sheets @ ₹${(transaction.amount/transaction.sheetsSold).toFixed(2)}`;
-              badgeClass = 'badge-sale';
-            } else {
-              details = transaction.description || 'Expense';
-              badgeClass = 'badge-expense';
-            }
-            
-            row.innerHTML = `
-              <td>${new Date(transaction.date).toLocaleDateString()}</td>
-              <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
-              <td>${details}</td>
-              <td>₹${transaction.amount}</td>
-              <td>
-                <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
-              </td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
+        transactions.forEach(transaction => {
+          const row = document.createElement('tr');
+          
+          let details = '';
+          let badgeClass = '';
+          
+          if (transaction.type === 'sale') {
+            details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
+            badgeClass = 'badge-sale';
+          } else {
+            details = transaction.description || 'Expense';
+            badgeClass = 'badge-expense';
+          }
+          
+          row.innerHTML = `
+            <td>${new Date(transaction.date).toLocaleDateString()}</td>
+            <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
+            <td>${details}</td>
+            <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
+            <td>
+              <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
         
         // Add event listeners to delete buttons
         document.querySelectorAll('.delete-transaction').forEach(btn => {
@@ -415,20 +467,29 @@
         });
         
         // Update summary
-        if (result.data.summary) {
-          const summary = result.data.summary;
-          document.getElementById('report-sheets').textContent = summary.totalSheets || 0;
-          document.getElementById('report-revenue').textContent = `₹${summary.totalRevenue || 0}`;
-          document.getElementById('report-production').textContent = `₹${summary.totalProductionCost || 0}`;
-          document.getElementById('report-expenses').textContent = `₹${summary.totalExpenses || 0}`;
-          document.getElementById('report-profit').textContent = `₹${summary.netProfit || 0}`;
-          document.getElementById('report-margin').textContent = summary.profitMargin ? `${summary.profitMargin}%` : '0%';
-        }
+        updateSummary(sales, expenses);
         
       } catch (error) {
         console.error('Error:', error);
         showAlert('Error loading transactions. Please try again.', 'danger');
       }
+    }
+    
+    // Update summary section
+    function updateSummary(sales, expenses) {
+      const totalSheets = sales.reduce((sum, sale) => sum + sale.sheetsSold, 0);
+      const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalRevenue, 0);
+      const totalProductionCost = sales.reduce((sum, sale) => sum + (sale.sheetsSold * 47), 0);
+      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const netProfit = totalRevenue - totalProductionCost - totalExpenses;
+      const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
+      
+      document.getElementById('report-sheets').textContent = totalSheets;
+      document.getElementById('report-revenue').textContent = `₹${totalRevenue}`;
+      document.getElementById('report-production').textContent = `₹${totalProductionCost}`;
+      document.getElementById('report-expenses').textContent = `₹${totalExpenses}`;
+      document.getElementById('report-profit').textContent = `₹${netProfit}`;
+      document.getElementById('report-margin').textContent = `${profitMargin}%`;
     }
     
     // Confirm Delete
@@ -440,7 +501,7 @@
     
     // Delete Record
     document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-      if (!currentDeleteId || !currentDeleteType) return;
+      if (!currentDeleteId) return;
       
       try {
         const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
@@ -456,11 +517,11 @@
           updateDashboard();
           loadTransactions();
         } else {
-          showAlert(result.message || 'Error deleting record', 'danger');
+          throw new Error(result.message || 'Error deleting record');
         }
       } catch (error) {
         console.error('Error:', error);
-        showAlert('Error deleting record. Please try again.', 'danger');
+        showAlert(error.message || 'Error deleting record. Please try again.', 'danger');
       }
       
       currentDeleteId = null;
@@ -470,7 +531,7 @@
     // Update Dashboard
     async function updateDashboard() {
       try {
-        const response = await fetch('/api/summary');
+        const response = await fetch('/api/summary?period=month');
         const result = await response.json();
         
         if (!result.success) {
@@ -482,8 +543,8 @@
         // Update summary cards
         document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
         document.getElementById('totalSheets').textContent = data.totalSheets || 0;
-        document.getElementById('totalExpenses').textContent = data.totalExpenses || 0;
-        document.getElementById('expenseCount').textContent = data.expenseCount || 0;
+        document.getElementById('totalExpenses').textContent = data.totalPetrol + data.totalOtherExpenses || 0;
+        document.getElementById('expenseCount').textContent = 'N/A'; // Not directly available from API
         document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
         document.getElementById('netProfit').textContent = data.netProfit || 0;
         document.getElementById('profitMargin').textContent = data.profitMargin || 0;
@@ -507,7 +568,6 @@
     // Initialize the dashboard
     document.addEventListener('DOMContentLoaded', () => {
       updateDashboard();
-      loadTransactions();
       
       // Set current month and year in filters
       const currentDate = new Date();
