@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -331,8 +332,8 @@ app.get('/api/summary', async (req, res) => {
       }
     ]);
 
-    // Get petrol expenses
-    const petrolExpenses = await Expense.aggregate([
+    // Get petrol expenses (only for monthly view)
+    const petrolExpenses = period === 'month' ? await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -345,10 +346,10 @@ app.get('/api/summary', async (req, res) => {
           totalPetrol: { $sum: "$amount" }
         }
       }
-    ]);
+    ]) : [{ totalPetrol: 0 }];
 
-    // Get other expenses
-    const otherExpenses = await Expense.aggregate([
+    // Get other expenses (only for monthly view)
+    const otherExpenses = period === 'month' ? await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -361,98 +362,7 @@ app.get('/api/summary', async (req, res) => {
           totalOtherExpenses: { $sum: "$amount" }
         }
       }
-    ]);
-
-    // Prepare chart data
-    let chartData = [];
-    if (period === 'month' || period === 'year') {
-      const groupBy = period === 'month' ? { $week: "$date" } : { $month: "$date" };
-      
-      const salesChartData = await Sale.aggregate([
-        { $match: dateFilter },
-        {
-          $group: {
-            _id: groupBy,
-            sheetsSold: { $sum: "$sheetsSold" },
-            revenue: { $sum: "$totalRevenue" },
-            productionCost: { $sum: { $multiply: ["$sheetsSold", 47] } }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
-
-      const petrolChartData = await Expense.aggregate([
-        { 
-          $match: { 
-            ...dateFilter,
-            type: 'petrol' 
-          } 
-        },
-        {
-          $group: {
-            _id: groupBy,
-            petrolExpense: { $sum: "$amount" }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
-
-      // Merge chart data
-      chartData = salesChartData.map(sale => {
-        const petrol = petrolChartData.find(p => p._id === sale._id);
-        return {
-          period: sale._id,
-          sheetsSold: sale.sheetsSold,
-          revenue: sale.revenue,
-          productionCost: sale.productionCost,
-          petrolExpense: petrol ? petrol.petrolExpense : 0,
-          profit: sale.revenue - sale.productionCost - (petrol ? petrol.petrolExpense : 0)
-        };
-      });
-    } else {
-      // Daily data
-      const salesChartData = await Sale.aggregate([
-        { $match: dateFilter },
-        {
-          $group: {
-            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-            sheetsSold: { $sum: "$sheetsSold" },
-            revenue: { $sum: "$totalRevenue" },
-            productionCost: { $sum: { $multiply: ["$sheetsSold", 47] } }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
-
-      const petrolChartData = await Expense.aggregate([
-        { 
-          $match: { 
-            ...dateFilter,
-            type: 'petrol' 
-          } 
-        },
-        {
-          $group: {
-            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-            petrolExpense: { $sum: "$amount" }
-          }
-        },
-        { $sort: { "_id": 1 } }
-      ]);
-
-      // Merge chart data
-      chartData = salesChartData.map(sale => {
-        const petrol = petrolChartData.find(p => p._id === sale._id);
-        return {
-          period: sale._id,
-          sheetsSold: sale.sheetsSold,
-          revenue: sale.revenue,
-          productionCost: sale.productionCost,
-          petrolExpense: petrol ? petrol.petrolExpense : 0,
-          profit: sale.revenue - sale.productionCost - (petrol ? petrol.petrolExpense : 0)
-        };
-      });
-    }
+    ]) : [{ totalOtherExpenses: 0 }];
 
     // Prepare response
     const response = {
@@ -463,11 +373,15 @@ app.get('/api/summary', async (req, res) => {
       totalOtherExpenses: otherExpenses[0]?.totalOtherExpenses || 0,
       avgPricePerSheet: salesSummary[0]?.avgPricePerSheet ? 
         parseFloat(salesSummary[0].avgPricePerSheet.toFixed(2)) : 0,
-      chartData: chartData
     };
 
-    // Calculate profit metrics
-    response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalPetrol - response.totalOtherExpenses;
+    // Calculate profit metrics (expenses only subtracted for monthly view)
+    if (period === 'month') {
+      response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalPetrol - response.totalOtherExpenses;
+    } else {
+      response.netProfit = response.totalRevenue - response.totalProductionCost;
+    }
+    
     response.profitMargin = response.totalRevenue > 0 ? 
       ((response.netProfit / response.totalRevenue) * 100).toFixed(2) : 0;
 
