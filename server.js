@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -37,7 +36,7 @@ const Expense = mongoose.model('Expense', ExpenseSchema);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'))); // Assuming 'public' is where index.html resides
 
 // Helper function to calculate date ranges
 function getDateRange(period) {
@@ -52,15 +51,19 @@ function getDateRange(period) {
     case 'week':
       const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
       range.start = new Date(startOfWeek.setHours(0, 0, 0, 0));
-      range.end = new Date();
+      range.end = new Date(); // End of current day
       break;
     case 'month':
       range.start = new Date(now.getFullYear(), now.getMonth(), 1);
-      range.end = new Date();
+      range.end = new Date(); // End of current day
       break;
     case 'year':
       range.start = new Date(now.getFullYear(), 0, 1);
-      range.end = new Date();
+      range.end = new Date(); // End of current day
+      break;
+    case 'all':
+      range.start = new Date(0); // Epoch
+      range.end = new Date(); // Current moment
       break;
   }
 
@@ -288,17 +291,18 @@ app.get('/api/transactions', async (req, res) => {
       };
     }
 
-    if (type === 'sales') {
-      const sales = await Sale.find(query).sort({ date: -1 });
-      return res.json({ success: true, data: { sales } });
-    } else if (type === 'expenses') {
-      const expenses = await Expense.find(query).sort({ date: -1 });
-      return res.json({ success: true, data: { expenses } });
-    } else {
-      const sales = await Sale.find(query).sort({ date: -1 });
-      const expenses = await Expense.find(query).sort({ date: -1 });
-      return res.json({ success: true, data: { sales, expenses } });
+    let sales = [];
+    let expenses = [];
+
+    if (type === 'sales' || type === 'all') {
+      sales = await Sale.find(query).sort({ date: -1 });
     }
+    if (type === 'expenses' || type === 'all') {
+      expenses = await Expense.find(query).sort({ date: -1 });
+    }
+    
+    return res.json({ success: true, data: { sales, expenses } });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ 
@@ -314,7 +318,7 @@ app.get('/api/summary', async (req, res) => {
     const { period } = req.query;
     const { start, end } = getDateRange(period);
     
-    const dateFilter = period === 'all' ? {} : { 
+    const dateFilter = { 
       date: { $gte: start, $lte: end } 
     };
 
@@ -332,8 +336,8 @@ app.get('/api/summary', async (req, res) => {
       }
     ]);
 
-    // Get petrol expenses (only for monthly view)
-    const petrolExpenses = period === 'month' ? await Expense.aggregate([
+    // Get petrol expenses
+    const petrolExpenses = await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -346,10 +350,10 @@ app.get('/api/summary', async (req, res) => {
           totalPetrol: { $sum: "$amount" }
         }
       }
-    ]) : [{ totalPetrol: 0 }];
+    ]);
 
-    // Get other expenses (only for monthly view)
-    const otherExpenses = period === 'month' ? await Expense.aggregate([
+    // Get other expenses
+    const otherExpenses = await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -362,7 +366,7 @@ app.get('/api/summary', async (req, res) => {
           totalOtherExpenses: { $sum: "$amount" }
         }
       }
-    ]) : [{ totalOtherExpenses: 0 }];
+    ]);
 
     // Prepare response
     const response = {
@@ -375,19 +379,14 @@ app.get('/api/summary', async (req, res) => {
         parseFloat(salesSummary[0].avgPricePerSheet.toFixed(2)) : 0,
     };
 
-    // Calculate profit metrics (expenses only subtracted for monthly view)
-    if (period === 'month') {
-      response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalPetrol - response.totalOtherExpenses;
-    } else {
-      response.netProfit = response.totalRevenue - response.totalProductionCost;
-    }
-    
+    // Calculate profit metrics
+    response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalPetrol - response.totalOtherExpenses;
     response.profitMargin = response.totalRevenue > 0 ? 
       ((response.netProfit / response.totalRevenue) * 100).toFixed(2) : 0;
 
     res.json({ success: true, data: response });
   } catch (err) {
-    console.error(err);
+    console.error("Error in /api/summary:", err); // Added specific error logging
     res.status(500).json({ 
       success: false, 
       message: 'Error generating summary', 
@@ -396,7 +395,7 @@ app.get('/api/summary', async (req, res) => {
   }
 });
 
-// Serve frontend
+// Serve frontend - This should be the last route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
