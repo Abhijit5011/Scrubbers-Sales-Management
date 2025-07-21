@@ -7,7 +7,517 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style> 
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-scrubber"></i>
+        <div class="logo-text">
+          <h1>Siddhanath Scrubbers</h1>
+          <p>Stainless Steel Scrubber Business Management</p>
+        </div>
+      </div>
+      <div class="current-date">
+        <i class="fas fa-calendar-alt"></i>
+        <span id="current-date"></span>
+      </div>
+    </header>
+    
+    <div class="dashboard">
+      <div class="card">
+        <h3><i class="fas fa-chart-line"></i> Total Sales</h3>
+        <div class="value" id="totalSales">₹0</div>
+        <div class="subtext"><i class="fas fa-boxes"></i> <span id="totalSheets">0</span> sheets sold</div>
+      </div>
+      
+      <div class="card">
+        <h3><i class="fas fa-money-bill-wave"></i> Total Expenses</h3>
+        <div class="value">₹<span id="totalExpenses">0</span></div>
+        <div class="subtext"><i class="fas fa-list"></i> <span id="expenseCount">0</span> expenses</div>
+      </div>
+      
+      <div class="card production">
+        <h3><i class="fas fa-industry"></i> Production Cost</h3>
+        <div class="value">₹<span id="totalProductionCost">0</span></div>
+        <div class="subtext"><i class="fas fa-cubes"></i> @ ₹47 per sheet</div>
+      </div>
+      
+      <div class="card profit">
+        <h3><i class="fas fa-hand-holding-usd"></i> Net Profit</h3>
+        <div class="value">₹<span id="netProfit">0</span></div>
+        <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
+      </div>
+    </div>
+    
+    <div class="tabs-container">
+      <div class="tabs">
+        <div class="tab" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
+        <div class="tab active" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales/Expenses</div>
+      </div>
+      
+      <!-- Alert Box -->
+      <div id="alert" class="alert"></div>
+      
+      <!-- Sales Entry Tab -->
+      <div class="tab-content active" id="sales-tab">
+        <form id="salesForm">
+          <div class="form-group">
+            <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
+            <input type="date" id="saleDate" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="sheetsSold"><i class="fas fa-layer-group"></i> Sheets Sold</label>
+            <input type="number" id="sheetsSold" min="1" placeholder="Number of sheets">
+          </div>
+          
+          <div class="form-group">
+            <label for="totalAmount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
+            <input type="number" id="totalAmount" min="1" placeholder="Total amount" required>
+          </div>
+          
+          <div class="form-group">
+            <button type="button" id="addExpenseBtn" class="btn btn-secondary"><i class="fas fa-plus"></i> Add Expense</button>
+          </div>
+          
+          <div class="form-group" id="expenseSection" style="display: none;">
+            <label for="expenseAmount"><i class="fas fa-rupee-sign"></i> Expense Amount (₹)</label>
+            <input type="number" id="expenseAmount" min="1" placeholder="Expense amount">
+            
+            <label for="expenseDescription"><i class="fas fa-align-left"></i> Description</label>
+            <select id="expenseDescription">
+              <option value="Petrol">Petrol</option>
+              <option value="Transport">Transport</option>
+              <option value="Packaging">Packaging</option>
+              <option value="Other">Other</option>
+            </select>
+            
+            <div id="otherExpenseContainer" style="display: none;">
+              <label for="otherExpenseDesc"><i class="fas fa-align-left"></i> Other Description</label>
+              <input type="text" id="otherExpenseDesc" placeholder="Enter description">
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Transaction</button>
+        </form>
+      </div>
+      
+      <!-- Transactions Tab -->
+      <div class="tab-content" id="transactions-tab">
+        <div class="filter-section">
+          <div class="form-group">
+            <label for="transactionTypeFilter"><i class="fas fa-filter"></i> Transaction Type</label>
+            <select id="transactionTypeFilter">
+              <option value="all">All Transactions</option>
+              <option value="sale">Sales Only</option>
+              <option value="expense">Expenses Only</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="monthFilter"><i class="fas fa-calendar"></i> Month</label>
+            <select id="monthFilter">
+              <option value="all">All Months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="yearFilter"><i class="fas fa-calendar"></i> Year</label>
+            <select id="yearFilter">
+              <option value="all">All Years</option>
+              <option value="2023">2023</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <button id="filterBtn" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filter</button>
+            <button id="downloadBtn" class="btn btn-success"><i class="fas fa-download"></i> Download</button>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <div class="table-wrapper">
+            <table id="transactionsTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Details</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Transactions will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="summary-card">
+          <h3><i class="fas fa-file-alt"></i> Financial Summary</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Total Sheets Sold</td>
+                <td id="report-sheets">0</td>
+              </tr>
+              <tr>
+                <td>Total Revenue</td>
+                <td id="report-revenue">₹0</td>
+              </tr>
+              <tr>
+                <td>Production Cost (@₹47/sheet)</td>
+                <td id="report-production">₹0</td>
+              </tr>
+              <tr>
+                <td>Total Expenses</td>
+                <td id="report-expenses">₹0</td>
+              </tr>
+              <tr>
+                <td>Net Profit</td>
+                <td id="report-profit">₹0</td>
+              </tr>
+              <tr>
+                <td>Profit Margin</td>
+                <td id="report-margin">0%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Confirm Deletion</h3>
+        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this record? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close-modal">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+    // DOM Elements
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const alertBox = document.getElementById('alert');
+    const salesForm = document.getElementById('salesForm');
+    const todayDate = new Date().toISOString().split('T')[0];
+    let currentDeleteId = null;
+    let currentDeleteType = null;
+    
+    // Set current date
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Set today's date as default
+    document.getElementById('saleDate').value = todayDate;
+    
+    // Initialize modals
+    const modals = document.querySelectorAll('.modal');
+    const closeModalBtns = document.querySelectorAll('.close-modal');
+    
+    closeModalBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        modals.forEach(modal => modal.style.display = 'none');
+      });
+    });
+    
+    window.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal')) {
+        modals.forEach(modal => modal.style.display = 'none');
+      }
+    });
+    
+    // Tab switching
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+        
+        // Load data when switching to transactions tab
+        if (tab.dataset.tab === 'transactions') {
+          loadTransactions();
+        }
+      });
+    });
+    
+    // Toggle expense section
+    document.getElementById('addExpenseBtn').addEventListener('click', function() {
+      const expenseSection = document.getElementById('expenseSection');
+      if (expenseSection.style.display === 'none') {
+        expenseSection.style.display = 'block';
+        this.innerHTML = '<i class="fas fa-minus"></i> Remove Expense';
+      } else {
+        expenseSection.style.display = 'none';
+        this.innerHTML = '<i class="fas fa-plus"></i> Add Expense';
+        document.getElementById('expenseAmount').value = '';
+        document.getElementById('expenseDescription').value = 'Petrol';
+        document.getElementById('otherExpenseDesc').value = '';
+        document.getElementById('otherExpenseContainer').style.display = 'none';
+      }
+    });
+    
+    // Toggle other expense description
+    document.getElementById('expenseDescription').addEventListener('change', function() {
+      if (this.value === 'Other') {
+        document.getElementById('otherExpenseContainer').style.display = 'block';
+      } else {
+        document.getElementById('otherExpenseContainer').style.display = 'none';
+      }
+    });
+    
+    // Sales Form Submission
+    salesForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        date: this.saleDate.value,
+        sheetsSold: parseInt(this.sheetsSold.value) || 0,
+        amount: parseInt(this.totalAmount.value)
+      };
+      
+      // Check if expense is added
+      if (document.getElementById('expenseSection').style.display === 'block') {
+        const expenseDesc = document.getElementById('expenseDescription').value === 'Other' 
+          ? document.getElementById('otherExpenseDesc').value 
+          : document.getElementById('expenseDescription').value;
+          
+        formData.expense = {
+          amount: parseInt(document.getElementById('expenseAmount').value),
+          description: expenseDesc
+        };
+      }
+      
+      try {
+        const response = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('Transaction saved successfully!', 'success');
+          this.reset();
+          this.saleDate.value = todayDate;
+          document.getElementById('expenseSection').style.display = 'none';
+          document.getElementById('addExpenseBtn').innerHTML = '<i class="fas fa-plus"></i> Add Expense';
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error saving data', 'danger');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error saving data. Please try again.', 'danger');
+      }
+    });
+    
+    // Filter Transactions
+    document.getElementById('filterBtn').addEventListener('click', loadTransactions);
+    
+    // Load transactions with filters
+    async function loadTransactions() {
+      try {
+        const typeFilter = document.getElementById('transactionTypeFilter').value;
+        const monthFilter = document.getElementById('monthFilter').value;
+        const yearFilter = document.getElementById('yearFilter').value;
+        
+        let url = '/api/transactions?';
+        if (typeFilter !== 'all') url += `type=${typeFilter}&`;
+        if (monthFilter !== 'all') url += `month=${monthFilter}&`;
+        if (yearFilter !== 'all') url += `year=${yearFilter}&`;
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to load transactions');
+        }
+        
+        const tbody = document.querySelector('#transactionsTable tbody');
+        tbody.innerHTML = '';
+        
+        // Process transactions
+        if (result.data.transactions) {
+          result.data.transactions.forEach(transaction => {
+            const row = document.createElement('tr');
+            
+            let details = '';
+            let badgeClass = '';
+            
+            if (transaction.type === 'sale') {
+              details = `${transaction.sheetsSold} sheets @ ₹${(transaction.amount/transaction.sheetsSold).toFixed(2)}`;
+              badgeClass = 'badge-sale';
+            } else {
+              details = transaction.description || 'Expense';
+              badgeClass = 'badge-expense';
+            }
+            
+            row.innerHTML = `
+              <td>${new Date(transaction.date).toLocaleDateString()}</td>
+              <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
+              <td>${details}</td>
+              <td>₹${transaction.amount}</td>
+              <td>
+                <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+        
+        // Add event listeners to delete buttons
+        document.querySelectorAll('.delete-transaction').forEach(btn => {
+          btn.addEventListener('click', () => confirmDelete(btn.dataset.id, btn.dataset.type));
+        });
+        
+        // Update summary
+        if (result.data.summary) {
+          const summary = result.data.summary;
+          document.getElementById('report-sheets').textContent = summary.totalSheets || 0;
+          document.getElementById('report-revenue').textContent = `₹${summary.totalRevenue || 0}`;
+          document.getElementById('report-production').textContent = `₹${summary.totalProductionCost || 0}`;
+          document.getElementById('report-expenses').textContent = `₹${summary.totalExpenses || 0}`;
+          document.getElementById('report-profit').textContent = `₹${summary.netProfit || 0}`;
+          document.getElementById('report-margin').textContent = summary.profitMargin ? `${summary.profitMargin}%` : '0%';
+        }
+        
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error loading transactions. Please try again.', 'danger');
+      }
+    }
+    
+    // Confirm Delete
+    function confirmDelete(id, type) {
+      currentDeleteId = id;
+      currentDeleteType = type;
+      document.getElementById('deleteModal').style.display = 'flex';
+    }
+    
+    // Delete Record
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+      if (!currentDeleteId || !currentDeleteType) return;
+      
+      try {
+        const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
+        const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
+          method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('Record deleted successfully!', 'success');
+          document.getElementById('deleteModal').style.display = 'none';
+          updateDashboard();
+          loadTransactions();
+        } else {
+          showAlert(result.message || 'Error deleting record', 'danger');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error deleting record. Please try again.', 'danger');
+      }
+      
+      currentDeleteId = null;
+      currentDeleteType = null;
+    });
+    
+    // Update Dashboard
+    async function updateDashboard() {
+      try {
+        const response = await fetch('/api/summary');
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to load dashboard data');
+        }
+        
+        const data = result.data;
+        
+        // Update summary cards
+        document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
+        document.getElementById('totalSheets').textContent = data.totalSheets || 0;
+        document.getElementById('totalExpenses').textContent = data.totalExpenses || 0;
+        document.getElementById('expenseCount').textContent = data.expenseCount || 0;
+        document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
+        document.getElementById('netProfit').textContent = data.netProfit || 0;
+        document.getElementById('profitMargin').textContent = data.profitMargin || 0;
+        
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error loading dashboard data. Please try again.', 'danger');
+      }
+    }
+    
+    // Show Alert
+    function showAlert(message, type) {
+      alertBox.textContent = message;
+      alertBox.className = `alert alert-${type} show`;
+      
+      setTimeout(() => {
+        alertBox.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Initialize the dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDashboard();
+      loadTransactions();
+      
+      // Set current month and year in filters
+      const currentDate = new Date();
+      document.getElementById('monthFilter').value = currentDate.getMonth() + 1;
+      document.getElementById('yearFilter').value = currentDate.getFullYear();
+    });
+</script>
+</body>
+</html>
+<style> 
     :root {
       --primary: #4361ee;
       --primary-light: #4cc9f0;
@@ -573,942 +1083,5 @@
       }
     }
   </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="logo">
-        <i class="fas fa-scrubber"></i>
-        <div class="logo-text">
-          <h1>Siddhanath Scrubbers</h1>
-          <p>Stainless Steel Scrubber Business Management</p>
-        </div>
-      </div>
-      <div class="current-date">
-        <i class="fas fa-calendar-alt"></i>
-        <span id="current-date"></span>
-      </div>
-    </header>
-    
-    <div class="dashboard">
-      <div class="card">
-        <h3><i class="fas fa-chart-line"></i> Total Sales</h3>
-        <div class="value" id="totalSales">₹0</div>
-        <div class="subtext"><i class="fas fa-boxes"></i> <span id="totalSheets">0</span> sheets sold</div>
-      </div>
-      
-      <div class="card production">
-        <h3><i class="fas fa-industry"></i> Production Cost</h3>
-        <div class="value">₹<span id="totalProductionCost">0</span></div>
-        <div class="subtext"><i class="fas fa-cubes"></i> @ ₹47 per sheet</div>
-      </div>
-      
-      <div class="card profit">
-        <h3><i class="fas fa-hand-holding-usd"></i> Net Profit</h3>
-        <div class="value">₹<span id="netProfit">0</span></div>
-        <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
-      </div>
-      
-      <div class="card expense">
-        <h3><i class="fas fa-gas-pump"></i> Petrol Expense</h3>
-        <div class="value">₹<span id="totalPetrol">0</span></div>
-        <div class="subtext"><i class="fas fa-truck"></i> Monthly costs</div>
-      </div>
-    </div>
-    
-    <div class="tabs-container">
-      <div class="tabs">
-        <div class="tab" data-tab="sales"><i class="fas fa-plus-circle"></i> Add Sales</div>
-        <div class="tab" data-tab="expenses"><i class="fas fa-money-bill-wave"></i> Add Expenses</div>
-        <div class="tab" data-tab="transactions"><i class="fas fa-exchange-alt"></i> Transactions</div>
-        <div class="tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</div>
-      </div>
-      
-      <!-- Alert Box -->
-      <div id="alert" class="alert"></div>
-      
-      <!-- Sales Entry Tab -->
-      
-      <div class="tab-content" id="sales-tab">
-                <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        <form id="salesForm">
-          <div class="form-group">
-            <label for="saleDate"><i class="far fa-calendar-alt"></i> Date</label>
-            <input type="date" id="saleDate" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="sheetsSold"><i class="fas fa-layer-group"></i> Sheets Sold</label>
-            <input type="number" id="sheetsSold" min="1" placeholder="Number of sheets" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="totalRevenue"><i class="fas fa-rupee-sign"></i> Total Revenue (₹)</label>
-            <input type="number" id="totalRevenue" min="60" placeholder="Total amount received" required>
-          </div>
-          
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Sale</button>
-        </form>
-      </div>
-      
-      <!-- Expenses Tab -->
-      <div class="tab-content" id="expenses-tab">
-                <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        <form id="expenseForm">
-          <div class="form-group">
-            <label for="expenseDate"><i class="far fa-calendar-alt"></i> Date</label>
-            <input type="date" id="expenseDate" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="expenseType"><i class="fas fa-tags"></i> Type</label>
-            <select id="expenseType" required>
-              <option value="petrol">Petrol</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="expenseAmount"><i class="fas fa-rupee-sign"></i> Amount (₹)</label>
-            <input type="number" id="expenseAmount" min="0" placeholder="Amount spent" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="expenseDescription"><i class="fas fa-align-left"></i> Description</label>
-            <input type="text" id="expenseDescription" placeholder="What was this expense for?">
-          </div>
-          
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Expense</button>
-        </form>
-      </div>
-      
-      <!-- Transactions Tab -->
-      <div class="tab-content active" id="transactions-tab">
-                <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        <div class="filter-section">
-          <div class="form-group">
-            <label for="startDate"><i class="far fa-calendar"></i> From Date</label>
-            <input type="date" id="startDate">
-          </div>
-          
-          <div class="form-group">
-            <label for="endDate"><i class="far fa-calendar"></i> To Date</label>
-            <input type="date" id="endDate">
-          </div>
-          
-          <div class="form-group">
-            <label for="transactionType"><i class="fas fa-filter"></i> Type</label>
-            <select id="transactionType">
-              <option value="all">All Transactions</option>
-              <option value="sales">Sales Only</option>
-              <option value="expenses">Expenses Only</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <button id="filterBtn" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filters</button>
-            <button id="resetFilters" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</button>
-          </div>
-        </div>
-        
-        <div class="table-container">
-          <table id="transactionsTable">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Details</th>
-                <th>Amount</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Transactions will be loaded here -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <!-- Reports Tab -->
-      <div class="tab-content" id="reports-tab">
-        <div class="period-selector">
-          <button class="period-btn active" data-period="today">Today</button>
-          <button class="period-btn" data-period="week">This Week</button>
-          <button class="period-btn" data-period="month">This Month</button>
-          <button class="period-btn" data-period="year">This Year</button>
-          <button class="period-btn" data-period="all">All Time</button>
-        </div>
-        
-        <div class="report-actions no-print">
-          <button id="printReport" class="btn btn-success"><i class="fas fa-print"></i> Print Report</button>
-          <button id="downloadReport" class="btn btn-primary"><i class="fas fa-download"></i> Download Report</button>
-        </div>
-        
-        <div id="print-container">
-          <div class="print-only" style="margin-bottom: 30px; text-align: center;">
-            <h2>ScrubberPro Business Report</h2>
-            <p id="report-period-text">Period: Today</p>
-            <p id="report-date">Generated on: <span id="current-report-date"></span></p>
-          </div>
-          
-          <div class="chart-container">
-            <h3 class="chart-title"><i class="fas fa-chart-line"></i> Sales Performance</h3>
-            <canvas id="salesChart"></canvas>
-          </div>
-          
-          <div class="chart-container">
-            <h3 class="chart-title"><i class="fas fa-money-bill-wave"></i> Profit Analysis</h3>
-            <canvas id="profitChart"></canvas>
-          </div>
-          
-          <div class="summary-card">
-            <h3><i class="fas fa-file-alt"></i> Financial Summary</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Total Sheets Sold</td>
-                  <td id="report-sheets">0</td>
-                </tr>
-                <tr>
-                  <td>Total Revenue</td>
-                  <td id="report-revenue">₹0</td>
-                </tr>
-                <tr>
-                  <td>Production Cost (@₹47/sheet)</td>
-                  <td id="report-production">₹0</td>
-                </tr>
-                <tr>
-                  <td>Petrol Expense</td>
-                  <td id="report-petrol">₹0</td>
-                </tr>
-                <tr>
-                  <td>Other Expenses</td>
-                  <td id="report-other-expenses">₹0</td>
-                </tr>
-                <tr>
-                  <td>Net Profit</td>
-                  <td id="report-profit">₹0</td>
-                </tr>
-                <tr>
-                  <td>Profit Margin</td>
-                  <td id="report-margin">0%</td>
-                </tr>
-                <tr>
-                  <td>Average Price per Sheet</td>
-                  <td id="report-avg-price">₹0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Sale Modal -->
-  <div id="editSaleModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Sale Record</h3>
-        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="editSaleForm">
-          <input type="hidden" id="editSaleId">
-          <div class="form-group">
-            <label for="editSaleDate">Date</label>
-            <input type="date" id="editSaleDate" required>
-          </div>
-          <div class="form-group">
-            <label for="editSheetsSold">Sheets Sold</label>
-            <input type="number" id="editSheetsSold" min="1" required>
-          </div>
-          <div class="form-group">
-            <label for="editTotalRevenue">Total Revenue (₹)</label>
-            <input type="number" id="editTotalRevenue" min="60" required>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary close-modal">Cancel</button>
-        <button id="updateSaleBtn" class="btn btn-primary">Update Sale</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Expense Modal -->
-  <div id="editExpenseModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Expense Record</h3>
-        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form id="editExpenseForm">
-          <input type="hidden" id="editExpenseId">
-          <div class="form-group">
-            <label for="editExpenseDate">Date</label>
-            <input type="date" id="editExpenseDate" required>
-          </div>
-          <div class="form-group">
-            <label for="editExpenseType">Type</label>
-            <select id="editExpenseType" required>
-              <option value="petrol">Petrol</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="editExpenseAmount">Amount (₹)</label>
-            <input type="number" id="editExpenseAmount" min="0" required>
-          </div>
-          <div class="form-group">
-            <label for="editExpenseDescription">Description</label>
-            <input type="text" id="editExpenseDescription">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary close-modal">Cancel</button>
-        <button id="updateExpenseBtn" class="btn btn-primary">Update Expense</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete Confirmation Modal -->
-  <div id="deleteModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Confirm Deletion</h3>
-        <button class="btn btn-icon btn-danger close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to delete this record? This action cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary close-modal">Cancel</button>
-        <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
-      </div>
-    </div>
-  </div>
-<script>
-    // DOM Elements
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const periodBtns = document.querySelectorAll('.period-btn');
-    const alertBox = document.getElementById('alert');
-    const salesForm = document.getElementById('salesForm');
-    const expenseForm = document.getElementById('expenseForm');
-    const todayDate = new Date().toISOString().split('T')[0];
-    let currentPeriod = 'today';
-    let salesChart = null;
-    let profitChart = null;
-    let currentDeleteId = null;
-    let currentDeleteType = null;
-    
-    // Set current date
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-    
-    // Set today's date as default
-    document.getElementById('saleDate').value = todayDate;
-    document.getElementById('expenseDate').value = todayDate;
-    
-    // Initialize modals
-    const modals = document.querySelectorAll('.modal');
-    const closeModalBtns = document.querySelectorAll('.close-modal');
-    
-    closeModalBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modals.forEach(modal => modal.style.display = 'none');
-      });
-    });
-    
-    window.addEventListener('click', (e) => {
-      if (e.target.classList.contains('modal')) {
-        modals.forEach(modal => modal.style.display = 'none');
-      }
-    });
-    
-    // Tab switching
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelector('.tab[data-tab="sales"]').classList.add('active');
-        document.getElementById('sales-tab').classList.add('active');
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        
-        tab.classList.add('active');
-        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-      });
-    });
-    
-    // Period switching
-    periodBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        periodBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentPeriod = btn.dataset.period;
-        updateDashboard();
-        updateReportPeriodText();
-      });
-    });
-    
-    // Update report period text
-    function updateReportPeriodText() {
-      const periodTexts = {
-        'today': 'Today',
-        'week': 'This Week',
-        'month': 'This Month',
-        'year': 'This Year',
-        'all': 'All Time'
-      };
-      document.getElementById('report-period-text').textContent = `Period: ${periodTexts[currentPeriod]}`;
-    }
-    
-    // Print report
-    document.getElementById('printReport').addEventListener('click', () => {
-      document.getElementById('current-report-date').textContent = new Date().toLocaleDateString();
-      window.print();
-    });
-    
-    // Download report as PDF
-    document.getElementById('downloadReport').addEventListener('click', () => {
-      showAlert('Report download functionality will be implemented soon!', 'success');
-    });
-    
-    // Sales Form Submission
-    salesForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const formData = {
-        date: this.saleDate.value,
-        sheetsSold: parseInt(this.sheetsSold.value),
-        totalRevenue: parseInt(this.totalRevenue.value)
-      };
-      
-      try {
-        const response = await fetch('/api/sales', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Sales entry saved successfully!', 'success');
-          this.reset();
-          this.saleDate.value = todayDate;
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error saving data', 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error saving data. Please try again.', 'danger');
-      }
-    });
-    
-    // Expense Form Submission
-    expenseForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const formData = {
-        date: this.expenseDate.value,
-        type: this.expenseType.value,
-        amount: parseInt(this.expenseAmount.value),
-        description: this.expenseDescription.value || `${this.expenseType.value} expense`
-      };
-      
-      try {
-        const response = await fetch('/api/expenses', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Expense saved successfully!', 'success');
-          this.reset();
-          this.expenseDate.value = todayDate;
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error saving expense', 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error saving expense. Please try again.', 'danger');
-      }
-    });
-    
-    // Filter Transactions
-    document.getElementById('filterBtn').addEventListener('click', loadTransactions);
-    document.getElementById('resetFilters').addEventListener('click', () => {
-      document.getElementById('startDate').value = '';
-      document.getElementById('endDate').value = '';
-      document.getElementById('transactionType').value = 'all';
-      loadTransactions();
-    });
-    
-    // Load transactions
-    async function loadTransactions() {
-      try {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const type = document.getElementById('transactionType').value;
-        
-        let url = '/api/transactions?';
-        if (startDate) url += `startDate=${startDate}&`;
-        if (endDate) url += `endDate=${endDate}&`;
-        if (type !== 'all') url += `type=${type}`;
-        
-        const response = await fetch(url);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load transactions');
-        }
-        
-        const tbody = document.querySelector('#transactionsTable tbody');
-        tbody.innerHTML = '';
-        
-        // Process sales
-        if (result.data.sales) {
-          result.data.sales.forEach(sale => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${new Date(sale.date).toLocaleDateString()}</td>
-              <td><span class="badge badge-sale">Sale</span></td>
-              <td>${sale.sheetsSold} sheets @ ₹${(sale.totalRevenue/sale.sheetsSold).toFixed(2)}</td>
-              <td>₹${sale.totalRevenue}</td>
-              <td>
-                <button class="btn btn-sm btn-success edit-sale" data-id="${sale._id}"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-danger delete-sale" data-id="${sale._id}"><i class="fas fa-trash"></i></button>
-              </td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
-        
-        // Process expenses
-        if (result.data.expenses) {
-          result.data.expenses.forEach(expense => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${new Date(expense.date).toLocaleDateString()}</td>
-              <td><span class="badge badge-expense">Expense</span></td>
-              <td>${expense.description}</td>
-              <td>₹${expense.amount}</td>
-              <td>
-                <button class="btn btn-sm btn-success edit-expense" data-id="${expense._id}"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-danger delete-expense" data-id="${expense._id}"><i class="fas fa-trash"></i></button>
-              </td>
-            `;
-            tbody.appendChild(row);
-          });
-        }
-        
-        // Add event listeners to edit and delete buttons
-        document.querySelectorAll('.edit-sale').forEach(btn => {
-          btn.addEventListener('click', () => editSale(btn.dataset.id));
-        });
-        
-        document.querySelectorAll('.delete-sale').forEach(btn => {
-          btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'sale'));
-        });
-        
-        document.querySelectorAll('.edit-expense').forEach(btn => {
-          btn.addEventListener('click', () => editExpense(btn.dataset.id));
-        });
-        
-        document.querySelectorAll('.delete-expense').forEach(btn => {
-          btn.addEventListener('click', () => confirmDelete(btn.dataset.id, 'expense'));
-        });
-        
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading transactions. Please try again.', 'danger');
-      }
-    }
-    
-    // Edit Sale
-    async function editSale(id) {
-      try {
-        const response = await fetch(`/api/sales/${id}`);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load sale data');
-        }
-        
-        const sale = result.data;
-        
-        document.getElementById('editSaleId').value = sale._id;
-        document.getElementById('editSaleDate').value = new Date(sale.date).toISOString().split('T')[0];
-        document.getElementById('editSheetsSold').value = sale.sheetsSold;
-        document.getElementById('editTotalRevenue').value = sale.totalRevenue;
-        
-        document.getElementById('editSaleModal').style.display = 'flex';
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading sale data. Please try again.', 'danger');
-      }
-    }
-    
-    // Edit Expense
-    async function editExpense(id) {
-      try {
-        const response = await fetch(`/api/expenses/${id}`);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load expense data');
-        }
-        
-        const expense = result.data;
-        
-        document.getElementById('editExpenseId').value = expense._id;
-        document.getElementById('editExpenseDate').value = new Date(expense.date).toISOString().split('T')[0];
-        document.getElementById('editExpenseType').value = expense.type;
-        document.getElementById('editExpenseAmount').value = expense.amount;
-        document.getElementById('editExpenseDescription').value = expense.description;
-        
-        document.getElementById('editExpenseModal').style.display = 'flex';
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading expense data. Please try again.', 'danger');
-      }
-    }
-    
-    // Update Sale
-    document.getElementById('updateSaleBtn').addEventListener('click', async function() {
-      const form = document.getElementById('editSaleForm');
-      const id = form.editSaleId.value;
-      
-      const formData = {
-        date: form.editSaleDate.value,
-        sheetsSold: parseInt(form.editSheetsSold.value),
-        totalRevenue: parseInt(form.editTotalRevenue.value)
-      };
-      
-      try {
-        const response = await fetch(`/api/sales/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Sale updated successfully!', 'success');
-          document.getElementById('editSaleModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error updating sale', 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error updating sale. Please try again.', 'danger');
-      }
-    });
-    
-    // Update Expense
-    document.getElementById('updateExpenseBtn').addEventListener('click', async function() {
-      const form = document.getElementById('editExpenseForm');
-      const id = form.editExpenseId.value;
-      
-      const formData = {
-        date: form.editExpenseDate.value,
-        type: form.editExpenseType.value,
-        amount: parseInt(form.editExpenseAmount.value),
-        description: form.editExpenseDescription.value
-      };
-      
-      try {
-        const response = await fetch(`/api/expenses/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Expense updated successfully!', 'success');
-          document.getElementById('editExpenseModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error updating expense', 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error updating expense. Please try again.', 'danger');
-      }
-    });
-    
-    // Confirm Delete
-    function confirmDelete(id, type) {
-      currentDeleteId = id;
-      currentDeleteType = type;
-      document.getElementById('deleteModal').style.display = 'flex';
-    }
-    
-    // Delete Record
-    document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-      if (!currentDeleteId || !currentDeleteType) return;
-      
-      try {
-        const endpoint = currentDeleteType === 'sale' ? 'sales' : 'expenses';
-        const response = await fetch(`/api/${endpoint}/${currentDeleteId}`, {
-          method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          showAlert('Record deleted successfully!', 'success');
-          document.getElementById('deleteModal').style.display = 'none';
-          updateDashboard();
-          loadTransactions();
-        } else {
-          showAlert(result.message || 'Error deleting record', 'danger');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error deleting record. Please try again.', 'danger');
-      }
-      
-      currentDeleteId = null;
-      currentDeleteType = null;
-    });
-    
-    // Update Dashboard
-    async function updateDashboard() {
-      try {
-        const response = await fetch(`/api/summary?period=${currentPeriod}`);
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to load dashboard data');
-        }
-        
-        const data = result.data;
-        
-        // Update summary cards
-        document.getElementById('totalSales').textContent = `₹${data.totalRevenue || 0}`;
-        document.getElementById('totalSheets').textContent = data.totalSheets || 0;
-        document.getElementById('totalProductionCost').textContent = data.totalProductionCost || 0;
-        document.getElementById('totalPetrol').textContent = data.totalPetrol || 0;
-        document.getElementById('netProfit').textContent = data.netProfit || 0;
-        document.getElementById('profitMargin').textContent = data.profitMargin || 0;
-        
-        // Update report summary
-        document.getElementById('report-sheets').textContent = data.totalSheets || 0;
-        document.getElementById('report-revenue').textContent = `₹${data.totalRevenue || 0}`;
-        document.getElementById('report-production').textContent = `₹${data.totalProductionCost || 0}`;
-        document.getElementById('report-petrol').textContent = `₹${data.totalPetrol || 0}`;
-        document.getElementById('report-other-expenses').textContent = `₹${data.totalOtherExpenses || 0}`;
-        document.getElementById('report-profit').textContent = `₹${data.netProfit || 0}`;
-        document.getElementById('report-margin').textContent = data.profitMargin ? `${data.profitMargin}%` : '0%';
-        document.getElementById('report-avg-price').textContent = data.avgPricePerSheet ? `₹${data.avgPricePerSheet.toFixed(2)}` : '₹0';
-        
-        // Update charts
-        updateCharts(data.chartData);
-      } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error loading dashboard data. Please try again.', 'danger');
-      }
-    }
-    
-    // Update Charts
-    function updateCharts(chartData) {
-      if (!chartData || chartData.length === 0) {
-        // Handle case when there's no data
-        if (salesChart) salesChart.destroy();
-        if (profitChart) profitChart.destroy();
-        
-        document.getElementById('salesChart').innerHTML = '<p>No sales data available for the selected period</p>';
-        document.getElementById('profitChart').innerHTML = '<p>No profit data available for the selected period</p>';
-        return;
-      }
-      
-      // Prepare labels and data
-      const labels = chartData.map(item => item.period);
-      const sheetsSoldData = chartData.map(item => item.sheetsSold);
-      const revenueData = chartData.map(item => item.revenue);
-      const productionCostData = chartData.map(item => item.productionCost);
-      const profitData = chartData.map(item => item.profit);
-      
-      // Sales Chart (Line chart for sheets sold)
-      const salesCtx = document.getElementById('salesChart').getContext('2d');
-      
-      if (salesChart) {
-        salesChart.destroy();
-      }
-      
-      salesChart = new Chart(salesCtx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Sheets Sold',
-              data: sheetsSoldData,
-              backgroundColor: 'rgba(76, 201, 240, 0.2)',
-              borderColor: 'rgba(76, 201, 240, 1)',
-              borderWidth: 2,
-              tension: 0.4,
-              fill: true
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.dataset.label}: ${context.raw}`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Sheets Sold'
-              }
-            }
-          }
-        }
-      });
-      
-      // Profit Chart (Bar chart for revenue, cost, profit)
-      const profitCtx = document.getElementById('profitChart').getContext('2d');
-      
-      if (profitChart) {
-        profitChart.destroy();
-      }
-      
-      profitChart = new Chart(profitCtx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Revenue (₹)',
-              data: revenueData,
-              backgroundColor: 'rgba(67, 97, 238, 0.7)',
-              borderColor: 'rgba(67, 97, 238, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Production Cost (₹)',
-              data: productionCostData,
-              backgroundColor: 'rgba(248, 150, 30, 0.7)',
-              borderColor: 'rgba(248, 150, 30, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Profit (₹)',
-              data: profitData,
-              backgroundColor: 'rgba(76, 201, 240, 0.7)',
-              borderColor: 'rgba(76, 201, 240, 1)',
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.dataset.label}: ₹${context.raw}`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Amount (₹)'
-              }
-            }
-          }
-        }
-      });
-    }
-    
-    // Show Alert
-    function showAlert(message, type) {
-      alertBox.textContent = message;
-      alertBox.className = `alert alert-${type} show`;
-      
-      setTimeout(() => {
-        alertBox.classList.remove('show');
-      }, 3000);
-    }
-    
-    // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', () => {
-      updateDashboard();
-      loadTransactions();
-      updateReportPeriodText();
-    });
-</script>
 </body>
 </html>
