@@ -1134,80 +1134,68 @@ async function loadTransactions() {
     const typeFilter = document.getElementById('transactionTypeFilter').value;
     const monthFilter = document.getElementById('monthFilter').value;
     const yearFilter = document.getElementById('yearFilter').value;
-
-    // Build query params for filtering
-    const queryParams = [];
-
+    
+    // Build date filter if month/year is selected
+    let queryParams = [];
+    
     if (monthFilter !== 'all' || yearFilter !== 'all') {
-      const year = yearFilter !== 'all' ? parseInt(yearFilter) : new Date().getFullYear();
-      const month = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : 0;
+  const year = yearFilter !== 'all' ? parseInt(yearFilter) : new Date().getFullYear();
+  const month = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : 0; // 0-indexed for JS Date
 
-      // Set startDate to 1st of selected month
-      const startDate = new Date(year, month, 1);
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0, 23, 59, 59); // last day of the selected month
 
-      // Set endDate to last day of selected month (by going to next month - 1 day)
-      const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+  queryParams.push(`startDate=${startDate.toISOString()}`);
+  queryParams.push(`endDate=${endDate.toISOString()}`);
+}
 
-      queryParams.push(`startDate=${startDate.toISOString()}`);
-      queryParams.push(`endDate=${endDate.toISOString()}`);
-    }
-
+    
     if (typeFilter !== 'all') {
       queryParams.push(`type=${typeFilter === 'sale' ? 'sales' : 'expenses'}`);
     }
-
+    
+    // Fetch transactions
     const response = await fetch(`/api/transactions?${queryParams.join('&')}`);
     const result = await response.json();
-
-    if (!result.success) throw new Error(result.message || 'Failed to load transactions');
-
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to load transactions');
+    }
+    
     const transactions = [
       ...(result.data.sales?.map(s => ({ ...s, type: 'sale' })) || []),
       ...(result.data.expenses?.map(e => ({ ...e, type: 'expense' })) || [])
     ].sort((a, b) => new Date(b.date) - new Date(a.date));
-
+    
+    // Render transactions
     const tbody = document.querySelector('#transactionsTable tbody');
     tbody.innerHTML = '';
-
+    
     transactions.forEach(transaction => {
       const row = document.createElement('tr');
-
+      
       let details = '';
-      let badgeClass = transaction.type === 'sale' ? 'badge-sale' : 'badge-expense';
-
+      let badgeClass = '';
+      
       if (transaction.type === 'sale') {
-        details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue / transaction.sheetsSold).toFixed(2)}`;
+        details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
+        badgeClass = 'badge-sale';
       } else {
         details = transaction.description || 'Expense';
+        badgeClass = 'badge-expense';
       }
-
+      
       row.innerHTML = `
         <td>${new Date(transaction.date).toLocaleDateString()}</td>
         <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
         <td>${details}</td>
         <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
         <td>
-          <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}">
-            <i class="fas fa-trash"></i>
-          </button>
+          <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
         </td>
       `;
       tbody.appendChild(row);
     });
-
-    document.querySelectorAll('.delete-transaction').forEach(btn => {
-      btn.addEventListener('click', () => confirmDelete(btn.dataset.id, btn.dataset.type));
-    });
-
-    updateSummary(result.data.sales || [], result.data.expenses || []);
-
-  } catch (error) {
-    console.error('Error:', error);
-    showAlert('Error loading transactions. Please try again.', 'danger');
-  }
-}
-
-    
     
     // Add event listeners to delete buttons
     document.querySelectorAll('.delete-transaction').forEach(btn => {
@@ -1279,7 +1267,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 // Update Dashboard with period filter
 async function updateDashboard(period = 'today') {
   try {
-    // Show loading indicators
+    // Show loading state
     document.querySelectorAll('.dashboard .card .value').forEach(el => {
       el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     });
@@ -1287,30 +1275,23 @@ async function updateDashboard(period = 'today') {
     // Fetch summary data
     const response = await fetch(`/api/summary?period=${period}`);
     const result = await response.json();
-
+    
     if (!result.success) {
       throw new Error(result.message || 'Failed to load dashboard data');
     }
-
-    const data = result.data || {};
-
-    const totalRevenue = data.totalRevenue || 0;
-    const totalSheets = data.totalSheets || 0;
-    const totalProductionCost = data.totalProductionCost || (totalSheets * 47);
-    const totalExpenses = (data.totalPetrol || 0) + (data.totalOtherExpenses || 0);
-    const netProfit = totalRevenue - totalProductionCost - totalExpenses;
-    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
-
-    // Fill dashboard cards
-    document.getElementById('totalSales').textContent = `₹${totalRevenue.toLocaleString()}`;
-    document.getElementById('totalSheets').textContent = totalSheets.toLocaleString();
-    document.getElementById('totalExpenses').textContent = totalExpenses.toLocaleString();
-    document.getElementById('expenseCount').textContent = '—'; // if you want actual count, add a backend field
-    document.getElementById('totalProductionCost').textContent = totalProductionCost.toLocaleString();
-    document.getElementById('netProfit').textContent = netProfit.toLocaleString();
-    document.getElementById('profitMargin').textContent = `${profitMargin}%`;
-
-    // Optional: update title based on selected period
+    
+    const data = result.data;
+    
+    // Update dashboard cards
+    document.getElementById('totalSales').textContent = `₹${data.totalRevenue?.toLocaleString() || 0}`;
+    document.getElementById('totalSheets').textContent = data.totalSheets?.toLocaleString() || 0;
+    document.getElementById('totalExpenses').textContent = (data.totalPetrol + data.totalOtherExpenses)?.toLocaleString() || 0;
+    document.getElementById('expenseCount').textContent = 'N/A'; // Not available in summary
+    document.getElementById('totalProductionCost').textContent = data.totalProductionCost?.toLocaleString() || 0;
+    document.getElementById('netProfit').textContent = data.netProfit?.toLocaleString() || 0;
+    document.getElementById('profitMargin').textContent = data.profitMargin || 0;
+    
+    // Update the dashboard title to show current filter
     const periodNames = {
       today: 'Today',
       week: 'This Week',
@@ -1318,25 +1299,25 @@ async function updateDashboard(period = 'today') {
       year: 'This Year',
       all: 'All Time'
     };
-
+    
     const dashboardTitle = document.querySelector('.dashboard h2') || document.createElement('h2');
-    dashboardTitle.textContent = `Business Overview (${periodNames[period] || 'Custom'})`;
+    dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
     if (!document.querySelector('.dashboard h2')) {
       document.querySelector('.dashboard').prepend(dashboardTitle);
     }
-
+    
   } catch (error) {
     console.error('Error:', error);
     showAlert('Error loading dashboard data. Please try again.', 'danger');
-
-    // Reset dashboard to safe defaults
+    
+    // Reset to default values on error
     document.getElementById('totalSales').textContent = '₹0';
     document.getElementById('totalSheets').textContent = '0';
     document.getElementById('totalExpenses').textContent = '0';
-    document.getElementById('expenseCount').textContent = '—';
+    document.getElementById('expenseCount').textContent = '0';
     document.getElementById('totalProductionCost').textContent = '0';
     document.getElementById('netProfit').textContent = '0';
-    document.getElementById('profitMargin').textContent = '0%';
+    document.getElementById('profitMargin').textContent = '0';
   }
 }
 
