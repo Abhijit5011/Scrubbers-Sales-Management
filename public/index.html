@@ -773,7 +773,7 @@
       <div class="card profit">
         <h3><i class="fas fa-hand-holding-usd"></i> Net Profit</h3>
         <div class="value">₹<span id="netProfit">0</span></div>
-        <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span>% margin</div>
+        <div class="subtext"><i class="fas fa-percentage"></i> <span id="profitMargin">0</span> margin</div>
       </div>
     </div>
     
@@ -1280,22 +1280,6 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 // Update Dashboard with period filter
 async function updateDashboard(period = 'today') {
   try {
-    // Get all value and subtext span elements
-    const valueElements = document.querySelectorAll('.dashboard .card .value');
-    const subtextSpanElements = document.querySelectorAll('.dashboard .card .subtext span');
-
-    // Show loading state for all cards
-    valueElements.forEach(el => {
-      if (el) {
-        el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-      }
-    });
-    subtextSpanElements.forEach(el => {
-      if (el) {
-        el.textContent = 'Loading...';
-      }
-    });
-
     // Fetch summary data
     const response = await fetch(`/api/summary?period=${period}`);
     const result = await response.json();
@@ -1306,11 +1290,10 @@ async function updateDashboard(period = 'today') {
     
     const data = result.data;
     
-    // Update dashboard cards
-    // For each element, clear innerHTML first, then set textContent
+    // Update dashboard cards directly with data or '0'
     const totalSalesElement = document.getElementById('totalSales');
     if (totalSalesElement) {
-      totalSalesElement.innerHTML = `₹${(data.totalRevenue || 0).toLocaleString()}`;
+      totalSalesElement.textContent = `₹${(data.totalRevenue || 0).toLocaleString()}`;
     }
 
     const totalSheetsElement = document.getElementById('totalSheets');
@@ -1331,12 +1314,12 @@ async function updateDashboard(period = 'today') {
     
     const totalProductionCostElement = document.getElementById('totalProductionCost');
     if (totalProductionCostElement) {
-      totalProductionCostElement.innerHTML = `₹${(data.totalProductionCost || 0).toLocaleString()}`;
+      totalProductionCostElement.textContent = `₹${(data.totalProductionCost || 0).toLocaleString()}`;
     }
 
     const netProfitElement = document.getElementById('netProfit');
     if (netProfitElement) {
-      netProfitElement.innerHTML = `₹${(data.netProfit || 0).toLocaleString()}`;
+      netProfitElement.textContent = `₹${(data.netProfit || 0).toLocaleString()}`;
     }
 
     const profitMarginElement = document.getElementById('profitMargin');
@@ -1344,10 +1327,10 @@ async function updateDashboard(period = 'today') {
       profitMarginElement.textContent = (data.profitMargin || 0) + '%';
     }
     
-    // REMOVE THE BUSINESS OVERVIEW HEADER
+    // Remove the "Business Overview" header if it exists
     let dashboardTitle = document.querySelector('.dashboard h2');
     if (dashboardTitle) {
-      dashboardTitle.remove(); // Remove the element if it exists
+      dashboardTitle.remove(); 
     }
     
   } catch (error) {
@@ -1356,7 +1339,7 @@ async function updateDashboard(period = 'today') {
     
     // Reset to default values on error
     const totalSalesElement = document.getElementById('totalSales');
-    if (totalSalesElement) totalSalesElement.innerHTML = '₹0';
+    if (totalSalesElement) totalSalesElement.textContent = '₹0';
 
     const totalSheetsElement = document.getElementById('totalSheets');
     if (totalSheetsElement) totalSheetsElement.textContent = '0';
@@ -1368,10 +1351,10 @@ async function updateDashboard(period = 'today') {
     if (expenseCountElement) expenseCountElement.textContent = '0';
     
     const totalProductionCostElement = document.getElementById('totalProductionCost');
-    if (totalProductionCostElement) totalProductionCostElement.innerHTML = '₹0';
+    if (totalProductionCostElement) totalProductionCostElement.textContent = '₹0';
 
     const netProfitElement = document.getElementById('netProfit');
-    if (netProfitElement) netProfitElement.innerHTML = '₹0';
+    if (netProfitElement) netProfitElement.textContent = '₹0';
 
     const profitMarginElement = document.getElementById('profitMargin');
     if (profitMarginElement) profitMarginElement.textContent = '0%';
