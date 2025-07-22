@@ -1142,12 +1142,8 @@ async function loadTransactions() {
         startDate = new Date(year, 0, 1);
         endDate = new Date(year, 11, 31, 23, 59, 59, 999); // Last day of the year
       }
-    } else if (monthFilter !== 'all') { // All years for a specific month (less common, but handled)
+    } else if (monthFilter !== 'all') { // Only month selected, assume current year
         const month = parseInt(monthFilter) - 1;
-        // This case is tricky for "all years" for a specific month.
-        // For simplicity, we'll assume "all years" means no date filter if month is also "all".
-        // If a specific month is selected without a year, it implies current year's month.
-        // Let's default to current year if only month is selected.
         const currentYear = new Date().getFullYear();
         startDate = new Date(currentYear, month, 1);
         endDate = new Date(currentYear, month + 1, 0, 23, 59, 59, 999);
@@ -1284,13 +1280,17 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 // Update Dashboard with period filter
 async function updateDashboard(period = 'today') {
   try {
+    // Get all value and subtext span elements
+    const valueElements = document.querySelectorAll('.dashboard .card .value');
+    const subtextSpanElements = document.querySelectorAll('.dashboard .card .subtext span');
+
     // Show loading state for all cards
-    document.querySelectorAll('.dashboard .card .value').forEach(el => {
+    valueElements.forEach(el => {
       if (el) {
         el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
       }
     });
-    document.querySelectorAll('.dashboard .card .subtext span').forEach(el => {
+    subtextSpanElements.forEach(el => {
       if (el) {
         el.textContent = 'Loading...';
       }
@@ -1307,10 +1307,10 @@ async function updateDashboard(period = 'today') {
     const data = result.data;
     
     // Update dashboard cards
-    // Ensure elements exist before setting textContent
+    // For each element, clear innerHTML first, then set textContent
     const totalSalesElement = document.getElementById('totalSales');
     if (totalSalesElement) {
-      totalSalesElement.textContent = `₹${(data.totalRevenue || 0).toLocaleString()}`;
+      totalSalesElement.innerHTML = `₹${(data.totalRevenue || 0).toLocaleString()}`;
     }
 
     const totalSheetsElement = document.getElementById('totalSheets');
@@ -1331,34 +1331,24 @@ async function updateDashboard(period = 'today') {
     
     const totalProductionCostElement = document.getElementById('totalProductionCost');
     if (totalProductionCostElement) {
-      totalProductionCostElement.textContent = (data.totalProductionCost || 0).toLocaleString();
+      totalProductionCostElement.innerHTML = `₹${(data.totalProductionCost || 0).toLocaleString()}`;
     }
 
     const netProfitElement = document.getElementById('netProfit');
     if (netProfitElement) {
-      netProfitElement.textContent = (data.netProfit || 0).toLocaleString();
+      netProfitElement.innerHTML = `₹${(data.netProfit || 0).toLocaleString()}`;
     }
 
     const profitMarginElement = document.getElementById('profitMargin');
     if (profitMarginElement) {
-      profitMarginElement.textContent = (data.profitMargin || 0) + '%'; // Add % sign
+      profitMarginElement.textContent = (data.profitMargin || 0) + '%';
     }
     
-    // Update the dashboard title to show current filter
-    const periodNames = {
-      today: 'Today',
-      week: 'This Week',
-      month: 'This Month',
-      year: 'This Year',
-      all: 'All Time'
-    };
-    
+    // REMOVE THE BUSINESS OVERVIEW HEADER
     let dashboardTitle = document.querySelector('.dashboard h2');
-    if (!dashboardTitle) {
-      dashboardTitle = document.createElement('h2');
-      document.querySelector('.dashboard').prepend(dashboardTitle);
+    if (dashboardTitle) {
+      dashboardTitle.remove(); // Remove the element if it exists
     }
-    dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
     
   } catch (error) {
     console.error('Error:', error);
@@ -1366,7 +1356,7 @@ async function updateDashboard(period = 'today') {
     
     // Reset to default values on error
     const totalSalesElement = document.getElementById('totalSales');
-    if (totalSalesElement) totalSalesElement.textContent = '₹0';
+    if (totalSalesElement) totalSalesElement.innerHTML = '₹0';
 
     const totalSheetsElement = document.getElementById('totalSheets');
     if (totalSheetsElement) totalSheetsElement.textContent = '0';
@@ -1378,10 +1368,10 @@ async function updateDashboard(period = 'today') {
     if (expenseCountElement) expenseCountElement.textContent = '0';
     
     const totalProductionCostElement = document.getElementById('totalProductionCost');
-    if (totalProductionCostElement) totalProductionCostElement.textContent = '0';
+    if (totalProductionCostElement) totalProductionCostElement.innerHTML = '₹0';
 
     const netProfitElement = document.getElementById('netProfit');
-    if (netProfitElement) netProfitElement.textContent = '0';
+    if (netProfitElement) netProfitElement.innerHTML = '₹0';
 
     const profitMarginElement = document.getElementById('profitMargin');
     if (profitMarginElement) profitMarginElement.textContent = '0%';
