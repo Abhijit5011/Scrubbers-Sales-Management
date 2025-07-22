@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -46,24 +45,28 @@ function getDateRange(period) {
 
   switch (period) {
     case 'today':
-      range.start = new Date(now.setHours(0, 0, 0, 0));
-      range.end = new Date(now.setHours(23, 59, 59, 999));
+      range.start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      range.end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
       break;
     case 'week':
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-      range.start = new Date(startOfWeek.setHours(0, 0, 0, 0));
-      range.end = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Set to Sunday of the current week
+      range.start = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate(), 0, 0, 0, 0);
+      range.end = new Date(); // Up to current moment
       break;
     case 'month':
-      range.start = new Date(now.getFullYear(), now.getMonth(), 1);
-      range.end = new Date();
+      range.start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      range.end = new Date(); // Up to current moment
       break;
     case 'year':
-      range.start = new Date(now.getFullYear(), 0, 1);
-      range.end = new Date();
+      range.start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      range.end = new Date(); // Up to current moment
+      break;
+    case 'all':
+      range.start = new Date(0); // Epoch (beginning of time)
+      range.end = new Date(); // Current moment
       break;
   }
-
   return range;
 }
 
@@ -314,7 +317,7 @@ app.get('/api/summary', async (req, res) => {
     const { period } = req.query;
     const { start, end } = getDateRange(period);
     
-    const dateFilter = period === 'all' ? {} : { 
+    const dateFilter = { 
       date: { $gte: start, $lte: end } 
     };
 
@@ -332,8 +335,20 @@ app.get('/api/summary', async (req, res) => {
       }
     ]);
 
-    // Get petrol expenses (only for monthly view)
-    const petrolExpenses = period === 'month' ? await Expense.aggregate([
+    // Get all expenses (petrol and other) for the selected period
+    const allExpenses = await Expense.aggregate([
+      { $match: dateFilter },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          count: { $sum: 1 } // Count of expenses
+        }
+      }
+    ]);
+
+    // Get petrol expenses specifically
+    const petrolExpenses = await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -346,10 +361,10 @@ app.get('/api/summary', async (req, res) => {
           totalPetrol: { $sum: "$amount" }
         }
       }
-    ]) : [{ totalPetrol: 0 }];
+    ]);
 
-    // Get other expenses (only for monthly view)
-    const otherExpenses = period === 'month' ? await Expense.aggregate([
+    // Get other expenses specifically
+    const otherExpenses = await Expense.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -362,7 +377,7 @@ app.get('/api/summary', async (req, res) => {
           totalOtherExpenses: { $sum: "$amount" }
         }
       }
-    ]) : [{ totalOtherExpenses: 0 }];
+    ]);
 
     // Prepare response
     const response = {
@@ -371,17 +386,14 @@ app.get('/api/summary', async (req, res) => {
       totalProductionCost: salesSummary[0]?.totalProductionCost || 0,
       totalPetrol: petrolExpenses[0]?.totalPetrol || 0,
       totalOtherExpenses: otherExpenses[0]?.totalOtherExpenses || 0,
+      totalExpenses: allExpenses[0]?.totalAmount || 0, // Total of all expenses
+      expenseCount: allExpenses[0]?.count || 0, // Count of all expenses
       avgPricePerSheet: salesSummary[0]?.avgPricePerSheet ? 
         parseFloat(salesSummary[0].avgPricePerSheet.toFixed(2)) : 0,
     };
 
-    // Calculate profit metrics (expenses only subtracted for monthly view)
-    if (period === 'month') {
-      response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalPetrol - response.totalOtherExpenses;
-    } else {
-      response.netProfit = response.totalRevenue - response.totalProductionCost;
-    }
-    
+    // Calculate profit metrics using the combined total expenses
+    response.netProfit = response.totalRevenue - response.totalProductionCost - response.totalExpenses;
     response.profitMargin = response.totalRevenue > 0 ? 
       ((response.netProfit / response.totalRevenue) * 100).toFixed(2) : 0;
 
