@@ -767,7 +767,7 @@
       <div class="card production">
         <h3><i class="fas fa-industry"></i> Production Cost</h3>
         <div class="value"><span id="totalProductionCost">0</span></div>
-        <div class="subtext"><i class="fas fa-cubes"></i> @ ₹47 per sheet</div>
+        <div class="subtext"><i class="fas fa-cubes"></i> @ ₹43 per sheet</div>
       </div>
       
       <div class="card profit">
@@ -907,7 +907,7 @@
               <div class="summary-value" id="report-revenue">₹0</div>
             </div>
             <div class="summary-row">
-              <div class="summary-metric">Production Cost (@₹47/sheet)</div>
+              <div class="summary-metric">Production Cost (@₹43/sheet)</div>
               <div class="summary-value" id="report-production">₹0</div>
             </div>
             <div class="summary-row">
@@ -1228,7 +1228,7 @@ async function loadTransactions() {
 function updateSummary(sales, expenses) {
   const totalSheets = sales.reduce((sum, sale) => sum + (sale.sheetsSold || 0), 0);
   const totalRevenue = sales.reduce((sum, sale) => sum + (sale.totalRevenue || 0), 0);
-  const totalProductionCost = totalSheets * 47; // ₹47 per sheet
+  const totalProductionCost = totalSheets * 43; // ₹43 per sheet
   const totalExpensesAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
   const netProfit = totalRevenue - totalProductionCost - totalExpensesAmount;
   const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
