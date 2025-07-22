@@ -329,7 +329,7 @@ app.get('/api/summary', async (req, res) => {
           _id: null,
           totalSheets: { $sum: "$sheetsSold" },
           totalRevenue: { $sum: "$totalRevenue" },
-          totalProductionCost: { $sum: { $multiply: ["$sheetsSold", 47] } },
+          totalProductionCost: { $sum: { $multiply: ["$sheetsSold", 43] } },
           avgPricePerSheet: { $avg: "$pricePerSheet" }
         }
       }
