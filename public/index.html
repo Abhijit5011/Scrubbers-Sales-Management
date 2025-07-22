@@ -591,10 +591,6 @@
   gap: 8px;
 }
 
-.filter-btn i {
-  font-size: 14px;
-}
-
 .filter-btn:hover {
   background: #edf2f7;
   transform: translateY(-2px);
@@ -1132,20 +1128,37 @@ async function loadTransactions() {
     const monthFilter = document.getElementById('monthFilter').value;
     const yearFilter = document.getElementById('yearFilter').value;
     
-    // Build date filter if month/year is selected
     let queryParams = [];
-    
-    if (monthFilter !== 'all' || yearFilter !== 'all') {
-      const year = yearFilter !== 'all' ? parseInt(yearFilter) : new Date().getFullYear();
-      const month = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : 0; // 0-indexed for JS Date
+    let startDate = null;
+    let endDate = null;
 
-      const startDate = new Date(year, month, 1);
-      const endDate = new Date(year, month + 1, 0, 23, 59, 59); // last day of the selected month
+    if (yearFilter !== 'all') {
+      const year = parseInt(yearFilter);
+      if (monthFilter !== 'all') {
+        const month = parseInt(monthFilter) - 1; // 0-indexed for JS Date
+        startDate = new Date(year, month, 1);
+        endDate = new Date(year, month + 1, 0, 23, 59, 59, 999); // Last day of the month
+      } else { // All months for a specific year
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31, 23, 59, 59, 999); // Last day of the year
+      }
+    } else if (monthFilter !== 'all') { // All years for a specific month (less common, but handled)
+        const month = parseInt(monthFilter) - 1;
+        // This case is tricky for "all years" for a specific month.
+        // For simplicity, we'll assume "all years" means no date filter if month is also "all".
+        // If a specific month is selected without a year, it implies current year's month.
+        // Let's default to current year if only month is selected.
+        const currentYear = new Date().getFullYear();
+        startDate = new Date(currentYear, month, 1);
+        endDate = new Date(currentYear, month + 1, 0, 23, 59, 59, 999);
+    }
+    // If both are 'all', startDate and endDate remain null, meaning no date filter is applied.
 
+    if (startDate && endDate) {
       queryParams.push(`startDate=${startDate.toISOString()}`);
       queryParams.push(`endDate=${endDate.toISOString()}`);
     }
-
+    
     if (typeFilter !== 'all') {
       queryParams.push(`type=${typeFilter === 'sale' ? 'sales' : 'expenses'}`);
     }
@@ -1165,33 +1178,39 @@ async function loadTransactions() {
     
     // Render transactions
     const tbody = document.querySelector('#transactionsTable tbody');
-    tbody.innerHTML = '';
+    tbody.innerHTML = ''; // Clear existing rows
     
-    transactions.forEach(transaction => {
-      const row = document.createElement('tr');
-      
-      let details = '';
-      let badgeClass = '';
-      
-      if (transaction.type === 'sale') {
-        details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
-        badgeClass = 'badge-sale';
-      } else {
-        details = transaction.description || 'Expense';
-        badgeClass = 'badge-expense';
-      }
-      
-      row.innerHTML = `
-        <td>${new Date(transaction.date).toLocaleDateString()}</td>
-        <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
-        <td>${details}</td>
-        <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
-        <td>
-          <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
+    if (transactions.length === 0) {
+      const noDataRow = document.createElement('tr');
+      noDataRow.innerHTML = `<td colspan="5" style="text-align: center; padding: 20px;">No transactions found for the selected filters.</td>`;
+      tbody.appendChild(noDataRow);
+    } else {
+      transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        
+        let details = '';
+        let badgeClass = '';
+        
+        if (transaction.type === 'sale') {
+          details = `${transaction.sheetsSold} sheets @ ₹${(transaction.totalRevenue/transaction.sheetsSold).toFixed(2)}`;
+          badgeClass = 'badge-sale';
+        } else {
+          details = transaction.description || 'Expense';
+          badgeClass = 'badge-expense';
+        }
+        
+        row.innerHTML = `
+          <td>${new Date(transaction.date).toLocaleDateString()}</td>
+          <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
+          <td>${details}</td>
+          <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
+          <td>
+            <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
     
     // Add event listeners to delete buttons
     document.querySelectorAll('.delete-transaction').forEach(btn => {
@@ -1204,6 +1223,8 @@ async function loadTransactions() {
   } catch (error) {
     console.error('Error:', error);
     showAlert('Error loading transactions. Please try again.', 'danger');
+    const tbody = document.querySelector('#transactionsTable tbody');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--danger);">Failed to load transactions.</td></tr>`;
   }
 }
 
@@ -1265,12 +1286,12 @@ async function updateDashboard(period = 'today') {
   try {
     // Show loading state for all cards
     document.querySelectorAll('.dashboard .card .value').forEach(el => {
-      if (el) { // Check if element exists
+      if (el) {
         el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
       }
     });
     document.querySelectorAll('.dashboard .card .subtext span').forEach(el => {
-      if (el) { // Check if element exists
+      if (el) {
         el.textContent = 'Loading...';
       }
     });
@@ -1289,39 +1310,38 @@ async function updateDashboard(period = 'today') {
     // Ensure elements exist before setting textContent
     const totalSalesElement = document.getElementById('totalSales');
     if (totalSalesElement) {
-      totalSalesElement.textContent = `₹${data.totalRevenue?.toLocaleString() || 0}`;
+      totalSalesElement.textContent = `₹${(data.totalRevenue || 0).toLocaleString()}`;
     }
 
     const totalSheetsElement = document.getElementById('totalSheets');
     if (totalSheetsElement) {
-      totalSheetsElement.textContent = data.totalSheets?.toLocaleString() || 0;
+      totalSheetsElement.textContent = (data.totalSheets || 0).toLocaleString();
     }
     
-    // Corrected: Target the span for totalExpenses
     const totalExpensesSpanElement = document.getElementById('totalExpenses');
     if (totalExpensesSpanElement) {
       const totalExpensesAmount = (data.totalPetrol || 0) + (data.totalOtherExpenses || 0);
-      totalExpensesSpanElement.textContent = totalExpensesAmount?.toLocaleString() || 0;
+      totalExpensesSpanElement.textContent = (totalExpensesAmount || 0).toLocaleString();
     }
 
     const expenseCountElement = document.getElementById('expenseCount');
     if (expenseCountElement) {
-      expenseCountElement.textContent = data.expenseCount?.toLocaleString() || 0;
+      expenseCountElement.textContent = (data.expenseCount || 0).toLocaleString();
     }
     
     const totalProductionCostElement = document.getElementById('totalProductionCost');
     if (totalProductionCostElement) {
-      totalProductionCostElement.textContent = data.totalProductionCost?.toLocaleString() || 0;
+      totalProductionCostElement.textContent = (data.totalProductionCost || 0).toLocaleString();
     }
 
     const netProfitElement = document.getElementById('netProfit');
     if (netProfitElement) {
-      netProfitElement.textContent = data.netProfit?.toLocaleString() || 0;
+      netProfitElement.textContent = (data.netProfit || 0).toLocaleString();
     }
 
     const profitMarginElement = document.getElementById('profitMargin');
     if (profitMarginElement) {
-      profitMarginElement.textContent = data.profitMargin || 0;
+      profitMarginElement.textContent = (data.profitMargin || 0) + '%'; // Add % sign
     }
     
     // Update the dashboard title to show current filter
@@ -1345,7 +1365,6 @@ async function updateDashboard(period = 'today') {
     showAlert(error.message || 'Error loading dashboard data. Please try again.', 'danger');
     
     // Reset to default values on error
-    // Ensure elements exist before setting textContent
     const totalSalesElement = document.getElementById('totalSales');
     if (totalSalesElement) totalSalesElement.textContent = '₹0';
 
@@ -1365,7 +1384,7 @@ async function updateDashboard(period = 'today') {
     if (netProfitElement) netProfitElement.textContent = '0';
 
     const profitMarginElement = document.getElementById('profitMargin');
-    if (profitMarginElement) profitMarginElement.textContent = '0';
+    if (profitMarginElement) profitMarginElement.textContent = '0%';
   }
 }
 
