@@ -1045,9 +1045,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // Map frontend period values to backend expected values
       const periodMap = {
         daily: 'today',
-        weekly: 'week',
-        monthly: 'month',
-        yearly: 'year',
+        week: 'week', // Corrected from 'weekly' to 'week' to match server
+        month: 'month',
+        year: 'year',
         all: 'all'
       };
       
@@ -1139,17 +1139,16 @@ async function loadTransactions() {
     let queryParams = [];
     
     if (monthFilter !== 'all' || yearFilter !== 'all') {
-  const year = yearFilter !== 'all' ? parseInt(yearFilter) : new Date().getFullYear();
-  const month = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : 0; // 0-indexed for JS Date
+      const year = yearFilter !== 'all' ? parseInt(yearFilter) : new Date().getFullYear();
+      const month = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : 0; // 0-indexed for JS Date
 
-  const startDate = new Date(year, month, 1);
-  const endDate = new Date(year, month + 1, 0, 23, 59, 59); // last day of the selected month
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59); // last day of the selected month
 
-  queryParams.push(`startDate=${startDate.toISOString()}`);
-  queryParams.push(`endDate=${endDate.toISOString()}`);
-}
+      queryParams.push(`startDate=${startDate.toISOString()}`);
+      queryParams.push(`endDate=${endDate.toISOString()}`);
+    }
 
-    
     if (typeFilter !== 'all') {
       queryParams.push(`type=${typeFilter === 'sale' ? 'sales' : 'expenses'}`);
     }
@@ -1188,8 +1187,8 @@ async function loadTransactions() {
       row.innerHTML = `
         <td>${new Date(transaction.date).toLocaleDateString()}</td>
         <td><span class="badge ${badgeClass}">${transaction.type === 'sale' ? 'Sale' : 'Expense'}</span></td>
-        <td>${details}</td>
         <td>₹${transaction.type === 'sale' ? transaction.totalRevenue : transaction.amount}</td>
+        <td>${details}</td>
         <td>
           <button class="btn btn-sm btn-danger delete-transaction" data-id="${transaction._id}" data-type="${transaction.type}"><i class="fas fa-trash"></i></button>
         </td>
@@ -1267,9 +1266,12 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
 // Update Dashboard with period filter
 async function updateDashboard(period = 'today') {
   try {
-    // Show loading state
+    // Show loading state for all cards
     document.querySelectorAll('.dashboard .card .value').forEach(el => {
       el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    });
+    document.querySelectorAll('.dashboard .card .subtext span').forEach(el => {
+      el.textContent = 'Loading...';
     });
 
     // Fetch summary data
@@ -1285,8 +1287,11 @@ async function updateDashboard(period = 'today') {
     // Update dashboard cards
     document.getElementById('totalSales').textContent = `₹${data.totalRevenue?.toLocaleString() || 0}`;
     document.getElementById('totalSheets').textContent = data.totalSheets?.toLocaleString() || 0;
-    document.getElementById('totalExpenses').textContent = (data.totalPetrol + data.totalOtherExpenses)?.toLocaleString() || 0;
-    document.getElementById('expenseCount').textContent = 'N/A'; // Not available in summary
+    
+    const totalExpensesAmount = (data.totalPetrol || 0) + (data.totalOtherExpenses || 0);
+    document.getElementById('totalExpenses').textContent = totalExpensesAmount?.toLocaleString() || 0;
+    document.getElementById('expenseCount').textContent = data.expenseCount?.toLocaleString() || 0; // Assuming expenseCount is returned by API
+    
     document.getElementById('totalProductionCost').textContent = data.totalProductionCost?.toLocaleString() || 0;
     document.getElementById('netProfit').textContent = data.netProfit?.toLocaleString() || 0;
     document.getElementById('profitMargin').textContent = data.profitMargin || 0;
@@ -1300,15 +1305,16 @@ async function updateDashboard(period = 'today') {
       all: 'All Time'
     };
     
-    const dashboardTitle = document.querySelector('.dashboard h2') || document.createElement('h2');
-    dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
-    if (!document.querySelector('.dashboard h2')) {
+    let dashboardTitle = document.querySelector('.dashboard h2');
+    if (!dashboardTitle) {
+      dashboardTitle = document.createElement('h2');
       document.querySelector('.dashboard').prepend(dashboardTitle);
     }
+    dashboardTitle.textContent = `Business Overview (${periodNames[period]})`;
     
   } catch (error) {
     console.error('Error:', error);
-    showAlert('Error loading dashboard data. Please try again.', 'danger');
+    showAlert(error.message || 'Error loading dashboard data. Please try again.', 'danger');
     
     // Reset to default values on error
     document.getElementById('totalSales').textContent = '₹0';
@@ -1342,5 +1348,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.filter-btn[data-period="daily"]').click();
 });
 </script>
+
 </body>
 </html>
